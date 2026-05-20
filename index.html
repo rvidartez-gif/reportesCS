@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Jungheinrich — Dashboard CS · Mayo 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  /* Fondos — gris industrial neutro, sin tinte azul */
+  --bg:#181818;
+  --bg2:#212121;
+  --bg3:#2A2A2A;
+  --bg4:#333333;
+  --border:rgba(255,255,255,.08);
+  --border2:rgba(255,255,255,.14);
+  --text:#EBEBEB;
+  --text2:#9A9A9A;
+  --text3:#606060;
+  --font:'Inter',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+
+  /* Paleta Jungheinrich */
+  --jred:#C8000A;       /* rojo corporativo — usado SOLO para alertas críticas */
+  --jred-dim:#8A0007;   /* rojo oscuro */
+  --jnavy:#073E58;      /* azul marino profundo */
+  --jnavy2:#0D5C7A;     /* navy medio */
+  --jamber:#F7A515;     /* amarillo equipos */
+  --jamber-dim:#B8760E; /* amarillo oscuro */
+  --jgreen:#2A6B3C;     /* verde operacional */
+  --jgray:#4A4A4A;      /* gris medio */
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh}
+
+/* ── HEADER ── */
+.hdr{background:var(--bg2);border-bottom:1px solid var(--border);padding:13px 26px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200}
+.hdr-logo{display:flex;align-items:center;gap:14px}
+.hdr-bar{width:4px;height:32px;background:var(--jred);border-radius:2px;flex-shrink:0}
+.hdr-brand{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.12em;font-family:var(--mono);margin-bottom:2px}
+.hdr-title{font-size:14px;font-weight:500;color:var(--text)}
+.hdr-right{display:flex;gap:8px;align-items:center}
+.bdg{font-size:11px;font-family:var(--mono);padding:4px 11px;border-radius:4px;display:flex;align-items:center;gap:6px}
+.bdg-navy{background:rgba(7,62,88,.3);color:#5EB8D8;border:1px solid rgba(7,62,88,.6)}
+.bdg-gray{background:rgba(255,255,255,.06);color:var(--text2);border:1px solid var(--border)}
+.ldot{width:6px;height:6px;border-radius:50%;background:#5EB8D8;animation:pulse 2.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* ── NAV ── */
+.nav{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 26px;display:flex;gap:0;overflow-x:auto}
+.nb{font-size:12px;font-weight:500;padding:11px 18px;border:none;background:transparent;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .18s;font-family:var(--font);white-space:nowrap;flex-shrink:0;letter-spacing:.01em}
+.nb.active{color:var(--text);border-bottom-color:var(--jamber)}
+.nb:hover:not(.active){color:var(--text2)}
+
+/* ── LAYOUT ── */
+.wrap{padding:20px 26px;max-width:1440px;margin:0 auto}
+.sec{display:none}.sec.active{display:block}
+
+/* ── FILTERS ── */
+.fbar{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.flbl{font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em}
+.fbtn{font-family:var(--font);font-size:11px;font-weight:500;padding:5px 13px;border-radius:3px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;transition:all .15s}
+.fbtn:hover{background:var(--bg4);color:var(--text)}
+
+/* ── METRICS ── */
+.metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
+.mc{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:14px 16px;position:relative;overflow:hidden}
+.mc::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--c,var(--jnavy))}
+.mc:hover{border-color:var(--border2)}
+.mc-tag{font-size:9px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.mc-num{font-size:26px;font-weight:300;color:var(--text);line-height:1;margin-bottom:3px}
+.mc-sub{font-size:11px;color:var(--text2)}.mc-icon{position:absolute;right:14px;top:14px;font-size:18px;opacity:.08}
+
+/* ── CARDS ── */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:16px 18px}
+.ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:6px}
+.ct{font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.08em}
+.cb{font-size:11px;padding:2px 8px;border-radius:3px;background:var(--bg3);color:var(--text2);font-family:var(--mono);border:1px solid var(--border)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+
+/* ── PILLS ── */
+.pill{font-size:10px;padding:2px 7px;border-radius:3px;font-family:var(--mono);font-weight:500;display:inline-block}
+.p-ok{background:rgba(42,107,60,.2);color:#6ABF82}
+.p-warn{background:rgba(247,165,21,.15);color:#F7A515}
+.p-bad{background:rgba(200,0,10,.15);color:#D94040}
+.p-info{background:rgba(7,62,88,.3);color:#5EB8D8}
+.p-part{background:rgba(13,92,122,.25);color:#5EB8D8}
+.p-mob{background:rgba(184,118,14,.2);color:#DBA030}
+.p-pend{background:rgba(200,0,10,.13);color:#D94040;border:1px solid rgba(200,0,10,.25)}
+.p-sent{background:rgba(247,165,21,.15);color:#F7A515}
+.p-conf{background:rgba(42,107,60,.2);color:#6ABF82}
+
+/* ── TABLE ── */
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{font-size:9px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.07em;text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none}
+.tbl th:hover{color:var(--text2)}
+.tbl th.sort-asc::after{content:' ▲';font-size:8px}
+.tbl th.sort-desc::after{content:' ▼';font-size:8px}
+.tbl td{padding:8px 10px;border-bottom:1px solid var(--border);font-size:12px;color:var(--text2);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:var(--bg3)}
+.tbl tr.clickable{cursor:pointer}
+.tbl tr.row-pend td{background:rgba(200,0,10,.025)}
+.tbl tr.row-pend:hover td{background:rgba(200,0,10,.05)}
+.av{width:28px;height:28px;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0}
+.nc{display:flex;align-items:center;gap:8px;color:var(--text)!important;font-weight:500}
+.doc-tag{font-size:10px;font-family:var(--mono);padding:2px 7px;border-radius:3px;background:var(--bg3);color:var(--text3);border:1px solid var(--border)}
+
+/* ── BARS ── */
+.br{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.br:last-child{margin-bottom:0}
+.bn{font-size:11px;color:var(--text2);width:68px;flex-shrink:0;text-align:right;font-family:var(--mono)}
+.bt{flex:1;background:var(--bg4);border-radius:2px;height:20px;overflow:hidden}
+.bf{height:100%;border-radius:2px;display:flex;align-items:center;padding:0 8px;font-size:11px;font-weight:600;color:#fff}
+
+/* ── PROG ── */
+.prog-track{width:100%;background:var(--bg4);border-radius:2px;height:4px;overflow:hidden;margin-top:4px}
+.prog-fill{height:100%;border-radius:2px}
+.age-bar{width:100%;background:var(--bg4);border-radius:2px;height:4px;overflow:hidden;margin-top:3px}
+.age-fill{height:100%;border-radius:2px}
+
+/* ── SEDES/SEDES ── */
+.scroll{overflow-y:auto;max-height:320px}
+.scroll::-webkit-scrollbar{width:3px}
+.scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* ── DONUT ── */
+.dw{position:relative}
+.dc{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none}
+.dn{font-size:22px;font-weight:300;color:var(--text)}.dl{font-size:9px;color:var(--text3);font-family:var(--mono)}
+.leg{display:flex;gap:14px;margin-top:10px;flex-wrap:wrap}
+.li{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
+.lsq{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+.cw{position:relative;width:100%}
+
+/* ── ENC SELECTOR ── */
+.enc-sel-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:18px}
+.enc-sel-card{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:14px 15px;cursor:pointer;transition:all .18s;border-left:3px solid transparent}
+.enc-sel-card:hover{background:var(--bg3);border-color:var(--border2)}
+
+/* ── SEM CARDS ── */
+.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.scard{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:13px 14px;border-left:3px solid transparent;cursor:pointer;transition:all .18s;position:relative}
+.scard:hover{background:var(--bg4)}
+.sc-arr{position:absolute;top:10px;right:10px;font-size:12px;opacity:.3;font-family:var(--mono)}
+.sc-t{font-size:12px;font-weight:500;color:var(--text);margin-bottom:2px}
+.sc-r{font-size:9px;color:var(--text3);font-family:var(--mono);margin-bottom:7px}
+.sc-s{display:flex;justify-content:space-between;font-size:10px;padding:2px 0}
+.sc-sl{color:var(--text3)}.sc-sv{font-weight:500;color:var(--text2)}
+
+/* ── ENC WRAP TABLE ── */
+.enc-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:4px;overflow:hidden}
+
+/* ── SEARCH ── */
+.sbar-wrap{position:relative;margin-bottom:12px}
+.sbar{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:3px;color:var(--text);font-family:var(--font);font-size:12px;padding:8px 14px 8px 34px;outline:none;transition:border-color .18s}
+.sbar:focus{border-color:var(--jamber)}
+.sbar::placeholder{color:var(--text3)}
+.sbar-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:13px;opacity:.35;pointer-events:none}
+
+/* ── MODAL ── */
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:500;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)}
+.mo.hidden{display:none}
+.mo-box{background:var(--bg2);border:1px solid var(--border2);border-radius:4px;width:100%;max-width:860px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;animation:su .18s ease}
+@keyframes su{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.mo-hd{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.mo-ti{font-size:14px;font-weight:500}.mo-su{font-size:11px;color:var(--text3);margin-top:2px;font-family:var(--mono)}
+.mo-x{background:var(--bg3);border:1px solid var(--border2);color:var(--text2);width:26px;height:26px;border-radius:3px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.mo-x:hover{background:var(--bg4);color:var(--text)}
+.mo-body{overflow-y:auto;padding:16px 20px;flex:1}
+.mo-body::-webkit-scrollbar{width:4px}
+.mo-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+.mo-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.mo-kpi{background:var(--bg3);border-radius:4px;padding:10px 12px;text-align:center;border-top:2px solid var(--border)}
+.mo-kv{font-size:16px;font-weight:500;margin-bottom:2px}
+.mo-kl{font-size:9px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em}
+
+/* ── PENDING PANEL ── */
+.pend-panel{background:rgba(200,0,10,.04);border:1px solid rgba(200,0,10,.18);border-radius:4px;overflow:hidden;margin-bottom:12px}
+.pend-panel-hdr{padding:11px 16px;border-bottom:1px solid rgba(200,0,10,.15);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.pend-panel-grid{display:grid;gap:0}
+
+@media(max-width:1100px){.metrics{grid-template-columns:repeat(3,1fr)}.enc-sel-grid{grid-template-columns:repeat(3,1fr)}.sg{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:720px){.metrics{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}.wrap{padding:12px 14px}.enc-sel-grid{grid-template-columns:1fr 1fr}.mo-kpis{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<!-- MODAL SEMANA -->
+<div class="mo hidden" id="moSem" onclick="closeMo('moSem',event)">
+  <div class="mo-box">
+    <div class="mo-hd"><div><div class="mo-ti" id="moSem-t">Semana</div><div class="mo-su" id="moSem-s">—</div></div><button class="mo-x" onclick="closeMo('moSem')">×</button></div>
+    <div class="mo-body"><div class="mo-kpis" id="moSem-k"></div><div style="overflow-x:auto"><table class="tbl" id="moSem-tbl" style="min-width:460px"></table></div></div>
+  </div>
+</div>
+
+<!-- MODAL TÉCNICO -->
+<div class="mo hidden" id="moTec" onclick="closeMo('moTec',event)">
+  <div class="mo-box">
+    <div class="mo-hd"><div><div class="mo-ti" id="moTec-t">Técnico</div><div class="mo-su" id="moTec-s">—</div></div><button class="mo-x" onclick="closeMo('moTec')">×</button></div>
+    <div class="mo-body" id="moTec-body"></div>
+  </div>
+</div>
+
+<div class="hdr">
+  <div class="hdr-logo">
+    <div class="hdr-bar"></div>
+    <div>
+      <div class="hdr-brand">Jungheinrich</div>
+      <div class="hdr-title">Dashboard Customer Service</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <div class="bdg bdg-gray" id="hdr-date">Mayo 2026</div>
+    <div class="bdg bdg-navy"><div class="ldot"></div><span id="hdr-tecs">45 técnicos</span></div>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="nb active" onclick="showSec('overview',this)">Resumen</button>
+  <button class="nb" onclick="showSec('encargados',this)">Horas Tec</button>
+  <button class="nb" onclick="showSec('provisiones',this)">Provisiones</button>
+  <button class="nb" onclick="showSec('cotizaciones',this)">Cotizaciones</button>
+</div>
+
+<div class="wrap">
+
+<!-- ══ RESUMEN ══ -->
+<div class="sec active" id="sec-overview">
+  <div class="fbar" style="margin-top:4px">
+    <span class="flbl">Cargo ›</span>
+    <button class="fbtn" id="fb-all" onclick="setCargo('all',this)">Todos</button>
+    <button class="fbtn" id="fb-ih"  onclick="setCargo('Inhouse',this)">Inhouse</button>
+    <button class="fbtn" id="fb-mb"  onclick="setCargo('Mobile',this)">Mobile</button>
+    <span class="flbl" style="margin-left:10px">Encargado ›</span>
+    <button class="fbtn" id="fe-MEDINA"   onclick="setEncOv('MEDINA',this)">Medina</button>
+    <button class="fbtn" id="fe-YSTAY"    onclick="setEncOv('YSTAY',this)">Ystay</button>
+    <button class="fbtn" id="fe-MONTALVO" onclick="setEncOv('MONTALVO',this)">Montalvo</button>
+    <button class="fbtn" id="fe-RIVAS"    onclick="setEncOv('RIVAS',this)">Rivas</button>
+    <button class="fbtn" id="fe-SARAVIA"  onclick="setEncOv('SARAVIA',this)">Saravia</button>
+  </div>
+  <div class="metrics" id="ov-metrics"></div>
+  <div class="g2">
+    <div class="card">
+      <div class="ch"><span class="ct">Técnicos por encargado</span><span class="cb" id="ov-enc-b">—</span></div>
+      <div id="ov-enc-bars"></div>
+    </div>
+    <div class="card">
+      <div class="ch"><span class="ct">Inhouse vs Mobile</span></div>
+      <div class="dw">
+        <div class="cw" style="height:150px"><canvas id="ov-donut" role="img" aria-label="Donut Inhouse vs Mobile">.</canvas></div>
+        <div class="dc"><div class="dn" id="ov-dn">—</div><div class="dl">total</div></div>
+      </div>
+      <div class="leg" id="ov-leg"></div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="card" style="cursor:pointer" onclick="showSec('provisiones',document.querySelectorAll('.nb')[2])">
+      <div class="ch"><span class="ct">Provisiones OPEN — S/. LC por antigüedad</span><span class="cb">hover · click para detalle →</span></div>
+      <div id="ov-prov"></div>
+    </div>
+    <div class="card" style="cursor:pointer" onclick="showSec('cotizaciones',document.querySelectorAll('.nb')[3])">
+      <div class="ch"><span class="ct">Cotizaciones activas</span><span class="cb" style="color:#D94040">⚠ pending = sin acción · click →</span></div>
+      <div id="ov-cot"></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:10px;cursor:pointer" onclick="showSec('encargados',document.querySelectorAll('.nb')[1])">
+    <div class="ch"><span class="ct">Horas SAP — técnicos sin meta mensual (160h)</span><span class="cb">click para ver detalle →</span></div>
+    <div id="ov-hours-enc"></div>
+  </div>
+</div>
+
+<!-- ══ HORAS TEC ══ -->
+<div class="sec" id="sec-encargados">
+  <div style="font-size:12px;color:var(--text2);margin-bottom:14px;margin-top:4px">Selecciona un encargado</div>
+  <div class="enc-sel-grid" id="enc-sel"></div>
+  <div id="enc-detail"></div>
+</div>
+
+<!-- ══ PROVISIONES ══ -->
+<div class="sec" id="sec-provisiones">
+  <div class="fbar" style="margin-top:4px">
+    <span class="flbl">Encargado ›</span>
+    <button class="fbtn" id="pf-Todos"    onclick="setPF('Todos',this)">Todos</button>
+    <button class="fbtn" id="pf-MEDINA"   onclick="setPF('MEDINA',this)">Medina</button>
+    <button class="fbtn" id="pf-MONTALVO" onclick="setPF('MONTALVO',this)">Montalvo</button>
+    <button class="fbtn" id="pf-RIVAS"    onclick="setPF('RIVAS',this)">Rivas</button>
+    <button class="fbtn" id="pf-SARAVIA"  onclick="setPF('SARAVIA',this)">Saravia</button>
+    <button class="fbtn" id="pf-YSTAY"    onclick="setPF('YSTAY',this)">Ystay</button>
+  </div>
+  <div class="metrics" id="pv-metrics"></div>
+  <div class="card">
+    <div class="ch"><span class="ct">Deliveries OPEN — pendientes de facturar</span><span class="cb" id="pv-count">—</span></div>
+    <div class="sbar-wrap"><span class="sbar-icon">🔍</span><input class="sbar" type="text" placeholder="Buscar cuenta, delivery, encargado…" oninput="filterProv(this.value)"/></div>
+    <div style="overflow-x:auto"><table class="tbl" id="pv-tbl" style="min-width:640px">
+      <thead><tr>
+        <th onclick="sortTbl('pv','delivery',this)">N° Delivery</th>
+        <th onclick="sortTbl('pv','cotizacion',this)">N° Cotización</th>
+        <th onclick="sortTbl('pv','account',this)">Cuenta</th>
+        <th onclick="sortTbl('pv','enc',this)">Encargado</th>
+        <th onclick="sortTbl('pv','owner',this)">Responsable</th>
+        <th onclick="sortTbl('pv','lineas',this)">Líneas</th>
+        <th onclick="sortTbl('pv','total_lc',this)">S/. LC ↓</th>
+        <th onclick="sortTbl('pv','total_usd',this)">USD ref.</th>
+        <th onclick="sortTbl('pv','oldest',this)">Antigüedad</th>
+        <th onclick="sortTbl('pv','avg_days',this)">Prom.</th>
+        <th>Prioridad</th>
+      </tr></thead>
+      <tbody id="pv-body"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ══ COTIZACIONES ══ -->
+<div class="sec" id="sec-cotizaciones">
+  <div class="fbar" style="margin-top:4px">
+    <span class="flbl">Encargado ›</span>
+    <button class="fbtn" id="cf-Todos"    onclick="setCF('Todos',this)">Todos</button>
+    <button class="fbtn" id="cf-MEDINA"   onclick="setCF('MEDINA',this)">Medina</button>
+    <button class="fbtn" id="cf-MONTALVO" onclick="setCF('MONTALVO',this)">Montalvo</button>
+    <button class="fbtn" id="cf-RIVAS"    onclick="setCF('RIVAS',this)">Rivas</button>
+    <button class="fbtn" id="cf-SARAVIA"  onclick="setCF('SARAVIA',this)">Saravia</button>
+    <button class="fbtn" id="cf-YSTAY"    onclick="setCF('YSTAY',this)">Ystay</button>
+    <span class="flbl" style="margin-left:10px">Estado ›</span>
+    <button class="fbtn" id="cs-all"       onclick="setCS('all',this)">Todos</button>
+    <button class="fbtn" id="cs-pending"   onclick="setCS('pending',this)">⚠ Pending</button>
+    <button class="fbtn" id="cs-sent"      onclick="setCS('sent',this)">Sent</button>
+    <button class="fbtn" id="cs-confirmed" onclick="setCS('confirmed',this)">Confirmed</button>
+  </div>
+  <div style="background:rgba(200,0,10,.04);border:1px solid rgba(200,0,10,.15);border-radius:3px;padding:8px 13px;margin-bottom:12px;font-size:12px;color:var(--text2)">
+    ⚠ <b style="color:#D94040">Pending</b> — sin acción registrada. El cliente no respondió y no hubo seguimiento. Son las más urgentes.
+  </div>
+  <div id="ct-pending-panel" style="margin-bottom:12px"></div>
+  <div class="metrics" id="ct-metrics"></div>
+  <div class="card">
+    <div class="ch"><span class="ct">Cotizaciones activas</span><span class="cb" id="ct-count">—</span></div>
+    <div class="sbar-wrap"><span class="sbar-icon">🔍</span><input class="sbar" type="text" placeholder="Buscar cliente, N° cotización, encargado…" oninput="filterCot(this.value)"/></div>
+    <div style="overflow-x:auto"><table class="tbl" id="ct-tbl" style="min-width:680px">
+      <thead><tr>
+        <th onclick="sortTbl('ct','doc_num',this)">N° Cotización</th>
+        <th onclick="sortTbl('ct','client',this)">Cliente</th>
+        <th onclick="sortTbl('ct','enc',this)">Encargado</th>
+        <th onclick="sortTbl('ct','lineas',this)">Líneas</th>
+        <th onclick="sortTbl('ct','total_lc',this)">S/. LC</th>
+        <th onclick="sortTbl('ct','total_usd',this)">USD ref.</th>
+        <th onclick="sortTbl('ct','oldest',this)">Antigüedad</th>
+        <th onclick="sortTbl('ct','avg_days',this)">Prom.</th>
+        <th onclick="sortTbl('ct','status',this)">Estado</th>
+      </tr></thead>
+      <tbody id="ct-body"></tbody>
+    </table></div>
+  </div>
+</div>
+
+</div><!-- wrap -->
+<script>
+const ENC={
+  SARAVIA:{color:'#5A0F2E',tecnicos:[
+    {t:"AGUSTIN MENDOZA",cargo:"Mobile",team:1,sede:"SUR",h:89.2,s:{S0:12.0,S1:35.6,S2:33.2,S3:8.4,S4:0.0}},
+    {t:"ALEXIS PORRAS",cargo:"Mobile",team:1,sede:"SUR",h:35.1,s:{S0:0.0,S1:0.0,S2:35.1,S3:0.0,S4:0.0}},
+    {t:"JORGE SOLIS",cargo:"Mobile",team:1,sede:"SUR",h:88.27,s:{S0:0.0,S1:36.31,S2:36.96,S3:15.0,S4:0.0}},
+    {t:"JUAN RUA",cargo:"Mobile",team:1,sede:"SUR",h:93.84,s:{S0:0.0,S1:47.0,S2:46.84,S3:0.0,S4:0.0}},
+    {t:"JUNIOR CHAVEZ",cargo:"Mobile",team:1,sede:"SUR",h:75.9,s:{S0:27.0,S1:24.0,S2:24.9,S3:0.0,S4:0.0}},
+    {t:"MARCOS PE\u00d1A",cargo:"Mobile",team:1,sede:"SUR",h:0,s:{S0:0,S1:0,S2:0,S3:0,S4:0}},
+    {t:"NICOLAS MAYURI",cargo:"Mobile",team:1,sede:"SUR",h:83.7,s:{S0:6.0,S1:44.2,S2:33.5,S3:0.0,S4:0.0}},
+    {t:"OSCAR NIZAMA",cargo:"Mobile",team:1,sede:"SUR",h:121.4,s:{S0:7.55,S1:50.75,S2:47.45,S3:15.65,S4:0.0}},
+    {t:"AUGUSTO MORAN",cargo:"Mobile",team:3,sede:"SUR",h:22.0,s:{S0:0.0,S1:3.0,S2:19.0,S3:0.0,S4:0.0}},
+    {t:"JHONATAN LUCIANO",cargo:"Mobile",team:3,sede:"SUR",h:71.0,s:{S0:17.0,S1:23.5,S2:19.0,S3:11.5,S4:0.0}},
+    {t:"MARIANO BALDEON",cargo:"Mobile",team:3,sede:"SUR",h:66.1,s:{S0:7.9,S1:11.8,S2:28.4,S3:18.0,S4:0.0}},
+  ]},
+  RIVAS:{color:'#7A4800',tecnicos:[
+    {t:"ALEX PE\u00d1A",cargo:"Mobile",team:2,sede:"NORTE",h:80.0,s:{S0:0.0,S1:27.5,S2:42.0,S3:10.5,S4:0.0}},
+    {t:"ALVARO FABIAN",cargo:"Mobile",team:2,sede:"NORTE",h:51.5,s:{S0:0.0,S1:15.0,S2:27.5,S3:9.0,S4:0.0}},
+    {t:"EDGAR MINAYA",cargo:"Mobile",team:2,sede:"NORTE",h:0,s:{S0:0,S1:0,S2:0,S3:0,S4:0}},
+    {t:"FRANK CARRILLO",cargo:"Mobile",team:2,sede:"NORTE",h:37.5,s:{S0:0.0,S1:0.0,S2:34.0,S3:3.5,S4:0.0}},
+    {t:"HIRVIN PRIETO",cargo:"Mobile",team:2,sede:"NORTE",h:102.52,s:{S0:8.0,S1:40.52,S2:38.0,S3:16.0,S4:0.0}},
+    {t:"JHONATAN YOVERA",cargo:"Mobile",team:2,sede:"NORTE",h:96.5,s:{S0:5.0,S1:61.0,S2:30.5,S3:0.0,S4:0.0}},
+    {t:"LUIS PASCUAL",cargo:"Mobile",team:2,sede:"NORTE",h:65.0,s:{S0:0.0,S1:23.7,S2:26.1,S3:15.2,S4:0.0}},
+    {t:"WILMER SORIA",cargo:"Mobile",team:2,sede:"NORTE",h:127.9,s:{S0:13.0,S1:41.45,S2:65.45,S3:8.0,S4:0.0}},
+  ]},
+  YSTAY:{color:'#0D5C7A',tecnicos:[
+    {t:"ARTURO CORDOVA",cargo:"Inhouse",team:4,sede:"SAGA BTL",h:59.0,s:{S0:18.0,S1:41.0,S2:0.0,S3:0.0,S4:0.0}},
+    {t:"BENJAMIN QUISPE",cargo:"Inhouse",team:4,sede:"ALICORP HUACHIPA",h:200.25,s:{S0:38.0,S1:79.5,S2:71.5,S3:11.25,S4:0.0}},
+    {t:"CARLOS FUENTES",cargo:"Inhouse",team:4,sede:"ALICORP CHICLAYO",h:123.4,s:{S0:10.0,S1:48.0,S2:57.4,S3:8.0,S4:0.0}},
+    {t:"CESAR ANDRES",cargo:"Inhouse",team:4,sede:"SAGA EL SOL",h:79.5,s:{S0:4.0,S1:31.5,S2:27.5,S3:16.5,S4:0.0}},
+    {t:"DAVID SILVA",cargo:"Inhouse",team:4,sede:"ALICORP HUACHIPA",h:135.0,s:{S0:37.0,S1:47.0,S2:42.0,S3:9.0,S4:0.0}},
+    {t:"ELVERT QUISPE",cargo:"Inhouse",team:4,sede:"ALICORP AREQUIPA",h:162.0,s:{S0:22.5,S1:72.0,S2:67.5,S3:0.0,S4:0.0}},
+    {t:"IVAN ENCISO",cargo:"Inhouse",team:4,sede:"ALICORP AREQUIPA",h:161.0,s:{S0:52.0,S1:24.0,S2:32.0,S3:53.0,S4:0.0}},
+    {t:"JAHIRO PALOMINO",cargo:"Inhouse",team:4,sede:"ALICORP HUACHIPA",h:177.0,s:{S0:50.0,S1:78.0,S2:36.0,S3:13.0,S4:0.0}},
+    {t:"JUAN ROSAS",cargo:"Inhouse",team:4,sede:"MASTERBREAD \u00d1A\u00d1A - CAJAMARQUILLA",h:125.5,s:{S0:24.5,S1:11.0,S2:0.0,S3:90.0,S4:0.0}},
+    {t:"MILTON GUERRA",cargo:"Inhouse",team:4,sede:"VITRAPRO TRUJILLO",h:169.0,s:{S0:39.0,S1:70.0,S2:28.0,S3:32.0,S4:0.0}},
+    {t:"OSIAS YAJAHUANCA",cargo:"Inhouse",team:4,sede:"SODIMAC LUCUMO",h:84.5,s:{S0:1.0,S1:32.0,S2:47.5,S3:4.0,S4:0.0}},
+  ]},
+  MEDINA:{color:'#073E58',tecnicos:[
+    {t:"JESUS CUMPA",cargo:"Inhouse",team:5,sede:"CALLAO",h:126.0,s:{S0:8.0,S1:61.0,S2:41.0,S3:16.0,S4:0.0}},
+    {t:"JHONATAN ARANGO",cargo:"Inhouse",team:5,sede:"INTRADEVCO PLANTA 1",h:91.31,s:{S0:0.0,S1:39.31,S2:35.0,S3:17.0,S4:0.0}},
+    {t:"JORDAN NU\u00d1EZ",cargo:"Inhouse",team:5,sede:"INTRADEVCO PLANTA 1",h:130.0,s:{S0:12.0,S1:52.5,S2:49.5,S3:16.0,S4:0.0}},
+    {t:"KEYLER HUAMAN",cargo:"Inhouse",team:5,sede:"INTRADEVCO CD 1",h:148.0,s:{S0:18.0,S1:54.5,S2:66.5,S3:9.0,S4:0.0}},
+    {t:"LUIS \u00d1AHUIS",cargo:"Inhouse",team:5,sede:"ALICORP LATAM",h:108.0,s:{S0:10.0,S1:46.5,S2:45.5,S3:6.0,S4:0.0}},
+    {t:"PERCY LUCIO",cargo:"Inhouse",team:5,sede:"CALLAO",h:180.0,s:{S0:12.0,S1:84.0,S2:84.0,S3:0.0,S4:0.0}},
+    {t:"RENZO SUAREZ",cargo:"Inhouse",team:5,sede:"INTRADEVCO CD 1",h:167.1,s:{S0:14.5,S1:74.35,S2:68.0,S3:10.25,S4:0.0}},
+    {t:"RONI CUMARI",cargo:"Inhouse",team:5,sede:"CALLAO",h:137.0,s:{S0:8.0,S1:66.0,S2:47.0,S3:16.0,S4:0.0}},
+    {t:"SERGIO GALARZA",cargo:"Inhouse",team:5,sede:"ALICORP LATAM",h:140.0,s:{S0:6.0,S1:61.0,S2:54.0,S3:19.0,S4:0.0}},
+    {t:"VICTOR PEREZ",cargo:"Inhouse",team:5,sede:"CALLAO",h:97.0,s:{S0:8.0,S1:57.0,S2:27.0,S3:5.0,S4:0.0}},
+    {t:"YUNCOR MU\u00d1OZ",cargo:"Inhouse",team:5,sede:"CALLAO",h:53.0,s:{S0:0.0,S1:41.0,S2:12.0,S3:0.0,S4:0.0}},
+  ]},
+  MONTALVO:{color:'#2A6B3C',tecnicos:[
+    {t:"GIOMAR HUANE",cargo:"Inhouse",team:7,sede:"AUTOMATIZACION",h:0,s:{S0:0,S1:0,S2:0,S3:0,S4:0}},
+    {t:"HAIRO CARHUAYO",cargo:"Inhouse",team:7,sede:"AUTOMATIZACION",h:8.0,s:{S0:0.0,S1:0.0,S2:4.0,S3:4.0,S4:0.0}},
+    {t:"JOSEPH PAREDES",cargo:"Inhouse",team:7,sede:"AUTOMATIZACION",h:0,s:{S0:0,S1:0,S2:0,S3:0,S4:0}},
+    {t:"LUIS CORDOVA",cargo:"Inhouse",team:7,sede:"AUTOMATIZACION",h:65.0,s:{S0:0.0,S1:23.7,S2:26.1,S3:15.2,S4:0.0}},
+  ]},
+};
+const PROV={
+  MEDINA:{total_docs:15,total_lc:54602.19,total_usd:14262.68,max_days:233,avg_days:54.5,accounts:[{"delivery": 695215198, "cotizacion": 696316679, "account": "INTRADEVCO INDUSTRIAL S.A.", "owner": "Medina, Brenda", "lineas": 3, "total_lc": 1978.49, "total_usd": 564.97, "oldest": 233, "avg_days": 233.0}, {"delivery": 695224031, "cotizacion": 696325228, "account": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "owner": "Medina, Brenda", "lineas": 6, "total_lc": 5125.64, "total_usd": 0.0, "oldest": 72, "avg_days": 72.0}, {"delivery": 695224328, "cotizacion": 696326404, "account": "MOLITALIA S.A", "owner": "Medina, Brenda", "lineas": 3, "total_lc": 5074.26, "total_usd": 1485.0, "oldest": 63, "avg_days": 63.0}, {"delivery": 695224905, "cotizacion": 696322747, "account": "MOLITALIA S.A", "owner": "Medina, Brenda", "lineas": 1, "total_lc": 1716.66, "total_usd": 495.0, "oldest": 55, "avg_days": 55.0}, {"delivery": 695225034, "cotizacion": 696322750, "account": "MOLITALIA S.A", "owner": "Medina, Brenda", "lineas": 1, "total_lc": 1715.67, "total_usd": 495.0, "oldest": 54, "avg_days": 54.0}, {"delivery": 695226139, "cotizacion": 696327494, "account": "ALICORP S.A.A.", "owner": "Medina, Brenda", "lineas": 1, "total_lc": 1881.31, "total_usd": 547.53, "oldest": 33, "avg_days": 33.0}, {"delivery": 695226915, "cotizacion": 696327802, "account": "ALICORP S.A.A.", "owner": "Medina, Brenda", "lineas": 2, "total_lc": 3138.2, "total_usd": 902.3, "oldest": 23, "avg_days": 23.0}, {"delivery": 695226827, "cotizacion": 696328118, "account": "ALICORP S.A.A.", "owner": "Medina, Brenda", "lineas": 2, "total_lc": 6383.88, "total_usd": 1818.77, "oldest": 22, "avg_days": 22.0}, {"delivery": 695226968, "cotizacion": 696322680, "account": "ALICORP S.A.A.", "owner": "Medina, Brenda", "lineas": 1, "total_lc": 1026.59, "total_usd": 290.9, "oldest": 20, "avg_days": 20.0}, {"delivery": 695227103, "cotizacion": 696328904, "account": "ALICORP S.A.A.", "owner": "Medina, Brenda", "lineas": 1, "total_lc": 1480.63, "total_usd": 419.56, "oldest": 20, "avg_days": 20.0}, {"delivery": 695227325, "cotizacion": 696328539, "account": "ALICORP S.A.A.", "owner": "Medina, Brenda", "lineas": 1, "total_lc": 2939.81, "total_usd": 834.7, "oldest": 15, "avg_days": 15.0}, {"delivery": 695227331, "cotizacion": 696328899, "account": "INTRADEVCO INDUSTRIAL S.A.", "owner": "Medina, Brenda", "lineas": 1, "total_lc": 3660.06, "total_usd": 1039.2, "oldest": 15, "avg_days": 15.0}, {"delivery": 695227905, "cotizacion": 696325796, "account": "ALICORP S.A.A.", "owner": "Medina, Brenda", "lineas": 4, "total_lc": 7197.46, "total_usd": 2086.23, "oldest": 9, "avg_days": 9.0}, {"delivery": 695227903, "cotizacion": 696328136, "account": "ALICORP S.A.A.", "owner": "Medina, Brenda", "lineas": 2, "total_lc": 4539.29, "total_usd": 1319.56, "oldest": 8, "avg_days": 8.0}, {"delivery": 695227901, "cotizacion": 696328906, "account": "ALICORP S.A.A.", "owner": "Medina, Brenda", "lineas": 2, "total_lc": 6744.24, "total_usd": 1963.96, "oldest": 7, "avg_days": 7.0}]},
+  MONTALVO:{total_docs:19,total_lc:68469.66,total_usd:13740.16,max_days:203,avg_days:88.3,accounts:[{"delivery": 695216470, "cotizacion": 696318222, "account": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "owner": "Villareal Chavez, Miguel Angel", "lineas": 2, "total_lc": 13837.3, "total_usd": 4074.59, "oldest": 203, "avg_days": 203.0}, {"delivery": 695218103, "cotizacion": 696319916, "account": "ALICORP S.A.A.", "owner": "Montalvo, Luis", "lineas": 4, "total_lc": 3067.9, "total_usd": 904.73, "oldest": 179, "avg_days": 179.0}, {"delivery": 695219224, "cotizacion": 696320742, "account": "ALICORP S.A.A.", "owner": "Montalvo, Luis", "lineas": 1, "total_lc": 1181.25, "total_usd": 350.0, "oldest": 155, "avg_days": 155.0}, {"delivery": 695221335, "cotizacion": 696322288, "account": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "owner": "Villareal Chavez, Miguel Angel", "lineas": 1, "total_lc": 3570.0, "total_usd": 0.0, "oldest": 125, "avg_days": 125.0}, {"delivery": 695222244, "cotizacion": 696324326, "account": "INTRADEVCO INDUSTRIAL S.A.", "owner": "Villareal Chavez, Miguel Angel", "lineas": 1, "total_lc": 2522.25, "total_usd": 750.0, "oldest": 99, "avg_days": 99.0}, {"delivery": 695222902, "cotizacion": 696321617, "account": "SAGA FALABELLA S A", "owner": "Montalvo, Luis", "lineas": 1, "total_lc": 1720.0, "total_usd": 0.0, "oldest": 96, "avg_days": 96.0}, {"delivery": 695222903, "cotizacion": 696324467, "account": "INTRADEVCO INDUSTRIAL S.A.", "owner": "Montalvo, Luis", "lineas": 1, "total_lc": 2802.92, "total_usd": 834.7, "oldest": 95, "avg_days": 95.0}, {"delivery": 695223264, "cotizacion": 696324482, "account": "ALICORP S.A.A.", "owner": "Montalvo, Luis", "lineas": 1, "total_lc": 2807.1, "total_usd": 834.7, "oldest": 84, "avg_days": 84.0}, {"delivery": 695223378, "cotizacion": 696324358, "account": "ALICORP S.A.A.", "owner": "Montalvo, Luis", "lineas": 2, "total_lc": 5946.53, "total_usd": 1768.23, "oldest": 84, "avg_days": 84.0}, {"delivery": 695223416, "cotizacion": 696324395, "account": "SAGA FALABELLA S A", "owner": "Montalvo, Luis", "lineas": 2, "total_lc": 12928.28, "total_usd": 30.73, "oldest": 80, "avg_days": 80.0}, {"delivery": 695224154, "cotizacion": 696325684, "account": "ALICORP S.A.A.", "owner": "Montalvo, Luis", "lineas": 1, "total_lc": 2860.52, "total_usd": 834.7, "oldest": 69, "avg_days": 69.0}, {"delivery": 695224647, "cotizacion": 696325632, "account": "RANSA COMERCIAL S.A.C.", "owner": "Montalvo, Luis", "lineas": 1, "total_lc": 3637.73, "total_usd": 0.0, "oldest": 58, "avg_days": 58.0}, {"delivery": 695225021, "cotizacion": 696324067, "account": "CORPORACION LIFE SAC", "owner": "Montalvo, Luis", "lineas": 1, "total_lc": 801.78, "total_usd": 230.0, "oldest": 53, "avg_days": 53.0}, {"delivery": 695225467, "cotizacion": 696325951, "account": "RANSA COMERCIAL S.A.C.", "owner": "Montalvo, Luis", "lineas": 2, "total_lc": 2221.71, "total_usd": 635.68, "oldest": 49, "avg_days": 49.0}, {"delivery": 695225973, "cotizacion": 696327696, "account": "INTRADEVCO INDUSTRIAL S.A.", "owner": "Montalvo, Luis", "lineas": 3, "total_lc": 2021.05, "total_usd": 582.94, "oldest": 48, "avg_days": 48.0}, {"delivery": 695225341, "cotizacion": 696327387, "account": "SAGA FALABELLA S A", "owner": "Montalvo, Luis", "lineas": 1, "total_lc": 52.14, "total_usd": 15.04, "oldest": 44, "avg_days": 44.0}, {"delivery": 695225978, "cotizacion": 696327596, "account": "INTRADEVCO INDUSTRIAL S.A.", "owner": "Montalvo, Luis", "lineas": 2, "total_lc": 1799.75, "total_usd": 530.9, "oldest": 35, "avg_days": 35.0}, {"delivery": 695227611, "cotizacion": 696329656, "account": "INTRADEVCO INDUSTRIAL S.A.", "owner": "Montalvo, Luis", "lineas": 1, "total_lc": 2587.5, "total_usd": 750.0, "oldest": 9, "avg_days": 9.0}, {"delivery": 695228311, "cotizacion": 696327394, "account": "SAGA FALABELLA S A", "owner": "Villareal Chavez, Miguel Angel", "lineas": 2, "total_lc": 2103.95, "total_usd": 613.22, "oldest": 0, "avg_days": 0.0}]},
+  RIVAS:{total_docs:37,total_lc:136416.1,total_usd:40071.63,max_days:234,avg_days:59.0,accounts:[{"delivery": 695215199, "cotizacion": 696316798, "account": "INTRADEVCO INDUSTRIAL S.A.", "owner": "Rivas, Jose", "lineas": 2, "total_lc": 1859.21, "total_usd": 530.9, "oldest": 234, "avg_days": 234.0}, {"delivery": 695216610, "cotizacion": 696317350, "account": "ALICORP S.A.A.", "owner": "Rivas, Jose", "lineas": 1, "total_lc": 4358.77, "total_usd": 1290.34, "oldest": 211, "avg_days": 211.0}, {"delivery": 695217085, "cotizacion": 696319267, "account": "ALICORP S.A.A.", "owner": "Rivas, Jose", "lineas": 1, "total_lc": 206.77, "total_usd": 61.23, "oldest": 194, "avg_days": 194.0}, {"delivery": 695218212, "cotizacion": 696316125, "account": "ALICORP S.A.A.", "owner": "Rivas, Jose", "lineas": 1, "total_lc": 2192.8, "total_usd": 649.91, "oldest": 184, "avg_days": 184.0}, {"delivery": 695218214, "cotizacion": 696318166, "account": "ALICORP S.A.A.", "owner": "Rivas, Jose", "lineas": 1, "total_lc": 1591.43, "total_usd": 469.31, "oldest": 179, "avg_days": 179.0}, {"delivery": 695218433, "cotizacion": 696317156, "account": "ALICORP S.A.A.", "owner": "Rivas, Jose", "lineas": 2, "total_lc": 1165.02, "total_usd": 345.6, "oldest": 173, "avg_days": 173.0}, {"delivery": 695219612, "cotizacion": 696321762, "account": "ALICORP S.A.A.", "owner": "Rivas, Jose", "lineas": 1, "total_lc": 518.37, "total_usd": 153.5, "oldest": 169, "avg_days": 169.0}, {"delivery": 695218826, "cotizacion": 696310287, "account": "ALICORP S.A.A.", "owner": "Rivas, Jose", "lineas": 2, "total_lc": 3430.26, "total_usd": 1020.0, "oldest": 166, "avg_days": 166.0}, {"delivery": 695218912, "cotizacion": 696308622, "account": "ALICORP S.A.A.", "owner": "Rivas, Jose", "lineas": 1, "total_lc": 3087.19, "total_usd": 916.08, "oldest": 159, "avg_days": 159.0}, {"delivery": 695219260, "cotizacion": 696320782, "account": "ALICORP S.A.A.", "owner": "Rivas, Jose", "lineas": 1, "total_lc": 10198.44, "total_usd": 3021.76, "oldest": 155, "avg_days": 155.0}, {"delivery": 695219598, "cotizacion": 696320155, "account": "ALICORP S.A.A.", "owner": "Rivas, Jose", "lineas": 3, "total_lc": 18669.76, "total_usd": 5536.7, "oldest": 149, "avg_days": 149.0}, {"delivery": 695219905, "cotizacion": 696321059, "account": "ALICORP S.A.A.", "owner": "Rivas, Jose", "lineas": 1, "total_lc": 2636.73, "total_usd": 782.18, "oldest": 147, "avg_days": 147.0}, {"delivery": 695220034, "cotizacion": 696321208, "account": "ALICORP S.A.A.", "owner": "Rivas, Jose", "lineas": 1, "total_lc": 2107.49, "total_usd": 625.74, "oldest": 138, "avg_days": 138.0}, {"delivery": 695221506, "cotizacion": 0, "account": "ALICORP S.A.A.", "owner": "Rivas, Jose", "lineas": 1, "total_lc": 1573.13, "total_usd": 469.31, "oldest": 112, "avg_days": 112.0}, {"delivery": 695222178, "cotizacion": 696322829, "account": "ALICORP S.A.A.", "owner": "Rivas, Jose", "lineas": 1, "total_lc": 2807.1, "total_usd": 834.7, "oldest": 100, "avg_days": 100.0}, {"delivery": 695222193, "cotizacion": 0, "account": "ALICORP S.A.A.", "owner": "Rivas, Jose", "lineas": 4, "total_lc": 23310.44, "total_usd": 6931.44, "oldest": 100, "avg_days": 100.0}, {"delivery": 695223118, "cotizacion": 696314872, "account": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "owner": "Rivas, Jose", "lineas": 2, "total_lc": 2765.24, "total_usd": 709.26, "oldest": 84, "avg_days": 84.0}, {"delivery": 695223673, "cotizacion": 696317416, "account": "CLOROX PERU S.A.", "owner": "Rivas, Jose", "lineas": 2, "total_lc": 6570.4, "total_usd": 1932.47, "oldest": 72, "avg_days": 72.0}, {"delivery": 695225275, "cotizacion": 696316166, "account": "CLOROX PERU S.A.", "owner": "Rivas, Jose", "lineas": 1, "total_lc": 576.35, "total_usd": 165.0, "oldest": 71, "avg_days": 71.0}, {"delivery": 695225014, "cotizacion": 696326114, "account": "NESTLE PERU S A", "owner": "Rivas, Jose", "lineas": 1, "total_lc": 265.0, "total_usd": 0.0, "oldest": 54, "avg_days": 54.0}, {"delivery": 695225020, "cotizacion": 696325104, "account": "CORPORACION LIFE SAC", "owner": "Rivas, Jose", "lineas": 1, "total_lc": 801.78, "total_usd": 230.0, "oldest": 53, "avg_days": 53.0}, {"delivery": 695226132, "cotizacion": 696320725, "account": "MOLITALIA S.A", "owner": "Rivas, Jose", "lineas": 6, "total_lc": 9457.72, "total_usd": 2794.01, "oldest": 37, "avg_days": 37.0}, {"delivery": 695225911, "cotizacion": 0, "account": "BAKELS PERU S.A.C.", "owner": "Rivas, Jose", "lineas": 1, "total_lc": 5044.5, "total_usd": 1500.0, "oldest": 35, "avg_days": 35.0}, {"delivery": 695226122, "cotizacion": 696326002, "account": "LIMA AIRPORT PARTNERS S.R.L", "owner": "Rivas, Jose", "lineas": 3, "total_lc": 3377.93, "total_usd": 996.44, "oldest": 35, "avg_days": 35.0}, {"delivery": 695226129, "cotizacion": 696327733, "account": "CORPORACION LIFE SAC", "owner": "Rivas, Jose", "lineas": 1, "total_lc": 790.28, "total_usd": 230.0, "oldest": 34, "avg_days": 34.0}, {"delivery": 695226128, "cotizacion": 696321289, "account": "NESTLE PERU S A", "owner": "Rivas, Jose", "lineas": 6, "total_lc": 1839.62, "total_usd": 535.4, "oldest": 33, "avg_days": 33.0}, {"delivery": 695226441, "cotizacion": 696315923, "account": "ALICORP S.A.A.", "owner": "Rivas, Jose", "lineas": 4, "total_lc": 1102.81, "total_usd": 320.21, "oldest": 29, "avg_days": 29.0}, {"delivery": 695226622, "cotizacion": 696328226, "account": "YOBEL SUPPLY CHAIN MANAGEMENT S.A.", "owner": "Rivas, Jose", "lineas": 2, "total_lc": 6689.63, "total_usd": 1943.53, "oldest": 28, "avg_days": 28.0}, {"delivery": 695226639, "cotizacion": 696327800, "account": "PROCESADORA CAMPO VERDE S.A.C.", "owner": "Rivas, Jose", "lineas": 1, "total_lc": 688.8, "total_usd": 200.0, "oldest": 27, "avg_days": 27.0}, {"delivery": 695226642, "cotizacion": 696327857, "account": "PROCESADORA CAMPO VERDE S.A.C.", "owner": "Rivas, Jose", "lineas": 2, "total_lc": 1050.42, "total_usd": 305.0, "oldest": 27, "avg_days": 27.0}, {"delivery": 695226641, "cotizacion": 696327797, "account": "PROCESADORA CAMPO VERDE S.A.C.", "owner": "Rivas, Jose", "lineas": 1, "total_lc": 695.6, "total_usd": 200.0, "oldest": 25, "avg_days": 25.0}, {"delivery": 695227044, "cotizacion": 696327201, "account": "REACTIVOS NACIONALES S A", "owner": "Rivas, Jose", "lineas": 1, "total_lc": 422.28, "total_usd": 120.0, "oldest": 21, "avg_days": 21.0}, {"delivery": 695227046, "cotizacion": 696327200, "account": "REACTIVOS NACIONALES S A", "owner": "Rivas, Jose", "lineas": 1, "total_lc": 422.28, "total_usd": 120.0, "oldest": 21, "avg_days": 21.0}, {"delivery": 695227586, "cotizacion": 696325391, "account": "CORPORACION LIFE SAC", "owner": "Rivas, Jose", "lineas": 1, "total_lc": 1259.25, "total_usd": 365.0, "oldest": 11, "avg_days": 11.0}, {"delivery": 695227587, "cotizacion": 696325391, "account": "CORPORACION LIFE SAC", "owner": "Rivas, Jose", "lineas": 1, "total_lc": 465.75, "total_usd": 135.0, "oldest": 11, "avg_days": 11.0}, {"delivery": 695227899, "cotizacion": 696330011, "account": "VIRU FROZEN S.A.", "owner": "Rivas, Jose", "lineas": 2, "total_lc": 535.75, "total_usd": 156.38, "oldest": 6, "avg_days": 6.0}, {"delivery": 695228161, "cotizacion": 696321164, "account": "GLORIA S A", "owner": "Rivas, Jose", "lineas": 26, "total_lc": 11881.8, "total_usd": 3475.23, "oldest": 5, "avg_days": 5.0}]},
+  SARAVIA:{total_docs:32,total_lc:155793.17,total_usd:40857.97,max_days:257,avg_days:45.7,accounts:[{"delivery": 695214432, "cotizacion": 696315627, "account": "SAGA FALABELLA S A", "owner": "Saravia, Fiorela", "lineas": 2, "total_lc": 1315.2, "total_usd": 371.63, "oldest": 257, "avg_days": 257.0}, {"delivery": 695214497, "cotizacion": 696316059, "account": "SAGA FALABELLA S A", "owner": "Saravia, Fiorela", "lineas": 1, "total_lc": 366.27, "total_usd": 104.38, "oldest": 252, "avg_days": 252.0}, {"delivery": 695221339, "cotizacion": 696318766, "account": "DHL SUPPLY CHAIN DE LIMA S.A.C.", "owner": "Saravia, Fiorela", "lineas": 1, "total_lc": 957.32, "total_usd": 285.0, "oldest": 118, "avg_days": 118.0}, {"delivery": 695221408, "cotizacion": 696311605, "account": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "owner": "Saravia, Fiorela", "lineas": 2, "total_lc": 5501.94, "total_usd": 1637.97, "oldest": 116, "avg_days": 116.0}, {"delivery": 695221340, "cotizacion": 696323258, "account": "DHL SUPPLY CHAIN DE LIMA S.A.C.", "owner": "Saravia, Fiorela", "lineas": 1, "total_lc": 1310.01, "total_usd": 390.0, "oldest": 114, "avg_days": 114.0}, {"delivery": 695221645, "cotizacion": 696323261, "account": "DHL SUPPLY CHAIN DE LIMA S.A.C.", "owner": "Saravia, Fiorela", "lineas": 1, "total_lc": 1508.4, "total_usd": 450.0, "oldest": 112, "avg_days": 112.0}, {"delivery": 695221766, "cotizacion": 696323259, "account": "DHL SUPPLY CHAIN DE LIMA S.A.C.", "owner": "Saravia, Fiorela", "lineas": 1, "total_lc": 1505.25, "total_usd": 450.0, "oldest": 110, "avg_days": 110.0}, {"delivery": 695221774, "cotizacion": 0, "account": "DHL SUPPLY CHAIN DE LIMA S.A.C.", "owner": "Saravia, Fiorela", "lineas": 1, "total_lc": 1308.45, "total_usd": 390.0, "oldest": 107, "avg_days": 107.0}, {"delivery": 695223317, "cotizacion": 696323260, "account": "DHL SUPPLY CHAIN DE LIMA S.A.C.", "owner": "Saravia, Fiorela", "lineas": 1, "total_lc": 1513.35, "total_usd": 450.0, "oldest": 83, "avg_days": 83.0}, {"delivery": 695225050, "cotizacion": 696325718, "account": "INTRADEVCO INDUSTRIAL S.A.", "owner": "Saravia, Fiorela", "lineas": 7, "total_lc": 4476.65, "total_usd": 1297.96, "oldest": 68, "avg_days": 68.0}, {"delivery": 695224065, "cotizacion": 696319794, "account": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "owner": "Saravia, Fiorela", "lineas": 2, "total_lc": 14069.56, "total_usd": 4074.59, "oldest": 67, "avg_days": 67.0}, {"delivery": 695225146, "cotizacion": 696326593, "account": "ILENDER PERU S.A.", "owner": "Saravia, Fiorela", "lineas": 2, "total_lc": 611.36, "total_usd": 177.0, "oldest": 61, "avg_days": 61.0}, {"delivery": 695224708, "cotizacion": 696319794, "account": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "owner": "Saravia, Fiorela", "lineas": 1, "total_lc": 7071.96, "total_usd": 2041.56, "oldest": 56, "avg_days": 56.0}, {"delivery": 695225073, "cotizacion": 696326871, "account": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "owner": "Saravia, Fiorela", "lineas": 5, "total_lc": 7617.96, "total_usd": 2185.3, "oldest": 53, "avg_days": 53.0}, {"delivery": 695225072, "cotizacion": 696307482, "account": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "owner": "Saravia, Fiorela", "lineas": 10, "total_lc": 3827.61, "total_usd": 530.01, "oldest": 51, "avg_days": 51.0}, {"delivery": 695225098, "cotizacion": 696312204, "account": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "owner": "Saravia, Fiorela", "lineas": 3, "total_lc": 1921.96, "total_usd": 549.94, "oldest": 50, "avg_days": 50.0}, {"delivery": 695225229, "cotizacion": 696326949, "account": "SAGA FALABELLA S A", "owner": "Saravia, Fiorela", "lineas": 1, "total_lc": 1420.0, "total_usd": 0.0, "oldest": 50, "avg_days": 50.0}, {"delivery": 695226098, "cotizacion": 696326476, "account": "SODIMAC PERU ORIENTE S.A.C.", "owner": "Saravia, Fiorela", "lineas": 3, "total_lc": 5900.58, "total_usd": 0.0, "oldest": 44, "avg_days": 44.0}, {"delivery": 695225706, "cotizacion": 696321683, "account": "DHL SUPPLY CHAIN DE LIMA S.A.C.", "owner": "Saravia, Fiorela", "lineas": 23, "total_lc": 18955.87, "total_usd": 5339.06, "oldest": 40, "avg_days": 40.0}, {"delivery": 695226074, "cotizacion": 696326124, "account": "SNACKS AMERICA LATINA SRL", "owner": "Saravia, Fiorela", "lineas": 2, "total_lc": 4960.0, "total_usd": 0.0, "oldest": 35, "avg_days": 35.0}, {"delivery": 695226539, "cotizacion": 696322024, "account": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "owner": "Saravia, Fiorela", "lineas": 7, "total_lc": 244.6, "total_usd": 71.02, "oldest": 27, "avg_days": 27.0}, {"delivery": 695226918, "cotizacion": 696328622, "account": "DHL SUPPLY CHAIN DE LIMA S.A.C.", "owner": "Saravia, Fiorela", "lineas": 1, "total_lc": 1343.16, "total_usd": 390.0, "oldest": 27, "avg_days": 27.0}, {"delivery": 695226917, "cotizacion": 696328269, "account": "BRAEDT S.A.", "owner": "Saravia, Fiorela", "lineas": 7, "total_lc": 5444.57, "total_usd": 1565.43, "oldest": 25, "avg_days": 25.0}, {"delivery": 695226947, "cotizacion": 696328791, "account": "DHL SUPPLY CHAIN DE LIMA S.A.C.", "owner": "Saravia, Fiorela", "lineas": 1, "total_lc": 1565.1, "total_usd": 450.0, "oldest": 23, "avg_days": 23.0}, {"delivery": 695226950, "cotizacion": 696328938, "account": "BRAEDT S.A.", "owner": "Saravia, Fiorela", "lineas": 2, "total_lc": 3081.55, "total_usd": 875.69, "oldest": 21, "avg_days": 21.0}, {"delivery": 695227392, "cotizacion": 696329179, "account": "DHL SUPPLY CHAIN DE LIMA S.A.C.", "owner": "Saravia, Fiorela", "lineas": 4, "total_lc": 2191.26, "total_usd": 622.34, "oldest": 16, "avg_days": 16.0}, {"delivery": 695227303, "cotizacion": 696328681, "account": "INVERSIONES VIJISA S.A.", "owner": "Baldeon, Wilmer", "lineas": 1, "total_lc": 422.64, "total_usd": 120.0, "oldest": 15, "avg_days": 15.0}, {"delivery": 695227300, "cotizacion": 696329026, "account": "PRODUCTORA ANDINA DE CONGELADOS S.R.L.", "owner": "Baldeon, Wilmer", "lineas": 2, "total_lc": 2465.57, "total_usd": 700.05, "oldest": 14, "avg_days": 14.0}, {"delivery": 695227909, "cotizacion": 696329424, "account": "VENTCORP PERU S.A.C.", "owner": "Saravia, Fiorela", "lineas": 1, "total_lc": 240.0, "total_usd": 0.0, "oldest": 13, "avg_days": 13.0}, {"delivery": 695227912, "cotizacion": 696329550, "account": "VENTCORP PERU S.A.C.", "owner": "Saravia, Fiorela", "lineas": 1, "total_lc": 220.0, "total_usd": 0.0, "oldest": 12, "avg_days": 12.0}, {"delivery": 695227919, "cotizacion": 696327392, "account": "LABORATORIOS AC FARMA S.A.", "owner": "Saravia, Fiorela", "lineas": 1, "total_lc": 1207.5, "total_usd": 350.0, "oldest": 11, "avg_days": 11.0}, {"delivery": 695228033, "cotizacion": 696323330, "account": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "owner": "Saravia, Fiorela", "lineas": 16, "total_lc": 51247.52, "total_usd": 14989.04, "oldest": 5, "avg_days": 5.0}]},
+  YSTAY:{total_docs:3,total_lc:4486.11,total_usd:1305.62,max_days:5,avg_days:5.0,accounts:[{"delivery": 695228063, "cotizacion": 696327391, "account": "SAGA FALABELLA S A", "owner": "Ystay, Erika", "lineas": 4, "total_lc": 1235.31, "total_usd": 359.52, "oldest": 5, "avg_days": 5.0}, {"delivery": 695228064, "cotizacion": 696327386, "account": "SAGA FALABELLA S A", "owner": "Ystay, Erika", "lineas": 3, "total_lc": 2062.8, "total_usd": 600.35, "oldest": 5, "avg_days": 5.0}, {"delivery": 695228072, "cotizacion": 696327385, "account": "SAGA FALABELLA S A", "owner": "Ystay, Erika", "lineas": 2, "total_lc": 1188.0, "total_usd": 345.75, "oldest": 5, "avg_days": 5.0}]},
+};
+const COT={
+  MEDINA:{total:18,pending:5,sent:13,confirmed:0,total_lc:88820.8,total_usd:25829.65,max_days:78,accounts:[{"doc_num": 696325611, "internal_num": 64532, "client": "ALICORP S.A.A.", "status": "pending", "lineas": 2, "total_lc": 2776.4, "total_usd": 814.67, "oldest": 77, "avg_days": 77.0}, {"doc_num": 696326684, "internal_num": 67098, "client": "ALICORP S.A.A.", "status": "pending", "lineas": 7, "total_lc": 385.69, "total_usd": 110.93, "oldest": 60, "avg_days": 60.0}, {"doc_num": 696329241, "internal_num": 72956, "client": "ALICORP S.A.A.", "status": "pending", "lineas": 3, "total_lc": 5485.65, "total_usd": 1557.97, "oldest": 16, "avg_days": 16.0}, {"doc_num": 696330073, "internal_num": 74910, "client": "ALICORP S.A.A.", "status": "pending", "lineas": 2, "total_lc": 8301.6, "total_usd": 2423.12, "oldest": 6, "avg_days": 6.0}, {"doc_num": 696330274, "internal_num": 75386, "client": "INTRADEVCO INDUSTRIAL S.A.", "status": "pending", "lineas": 16, "total_lc": 10698.2, "total_usd": 3110.85, "oldest": 1, "avg_days": 1.0}, {"doc_num": 696325560, "internal_num": 64393, "client": "ALICORP S.A.A.", "status": "sent", "lineas": 3, "total_lc": 3423.2, "total_usd": 1016.39, "oldest": 78, "avg_days": 78.0}, {"doc_num": 696324565, "internal_num": 62091, "client": "ALICORP S.A.A.", "status": "sent", "lineas": 1, "total_lc": 512.1, "total_usd": 150.0, "oldest": 76, "avg_days": 76.0}, {"doc_num": 696325671, "internal_num": 64682, "client": "ALICORP S.A.A.", "status": "sent", "lineas": 2, "total_lc": 4313.79, "total_usd": 1263.56, "oldest": 76, "avg_days": 76.0}, {"doc_num": 696326345, "internal_num": 66285, "client": "INTRADEVCO INDUSTRIAL S.A.", "status": "sent", "lineas": 2, "total_lc": 1667.64, "total_usd": 484.92, "oldest": 64, "avg_days": 64.0}, {"doc_num": 696326440, "internal_num": 66499, "client": "INTRADEVCO INDUSTRIAL S.A.", "status": "sent", "lineas": 27, "total_lc": 13408.93, "total_usd": 3899.08, "oldest": 64, "avg_days": 64.0}, {"doc_num": 696328366, "internal_num": 70887, "client": "ALICORP S.A.A.", "status": "sent", "lineas": 2, "total_lc": 20252.18, "total_usd": 5883.84, "oldest": 30, "avg_days": 30.0}, {"doc_num": 696328464, "internal_num": 71106, "client": "INTRADEVCO INDUSTRIAL S.A.", "status": "sent", "lineas": 4, "total_lc": 3604.53, "total_usd": 1047.22, "oldest": 30, "avg_days": 30.0}, {"doc_num": 696329100, "internal_num": 72633, "client": "ALICORP S.A.A.", "status": "sent", "lineas": 1, "total_lc": 1108.9, "total_usd": 314.94, "oldest": 19, "avg_days": 19.0}, {"doc_num": 696329941, "internal_num": 74585, "client": "ALICORP S.A.A.", "status": "sent", "lineas": 2, "total_lc": 7201.3, "total_usd": 2097.06, "oldest": 7, "avg_days": 7.0}, {"doc_num": 696330161, "internal_num": 75124, "client": "ALICORP S.A.A.", "status": "sent", "lineas": 1, "total_lc": 1709.5, "total_usd": 500.0, "oldest": 5, "avg_days": 5.0}, {"doc_num": 696330244, "internal_num": 75317, "client": "JH LTR", "status": "sent", "lineas": 1, "total_lc": 1030.5, "total_usd": 300.0, "oldest": 2, "avg_days": 2.0}, {"doc_num": 696330304, "internal_num": 75465, "client": "JH LTR", "status": "sent", "lineas": 1, "total_lc": 1031.7, "total_usd": 300.0, "oldest": 1, "avg_days": 1.0}, {"doc_num": 696330314, "internal_num": 75492, "client": "JH LTR", "status": "sent", "lineas": 1, "total_lc": 1908.99, "total_usd": 555.1, "oldest": 1, "avg_days": 1.0}]},
+  MONTALVO:{total:51,pending:0,sent:48,confirmed:3,total_lc:372645.68,total_usd:87697.56,max_days:71,accounts:[{"doc_num": 696328696, "internal_num": 71683, "client": "HIPERMERCADOS TOTTUS S.A.", "status": "confirmed", "lineas": 1, "total_lc": 5061.44, "total_usd": 1462.0, "oldest": 26, "avg_days": 26.0}, {"doc_num": 696329101, "internal_num": 72635, "client": "HIPERMERCADOS TOTTUS S.A.", "status": "confirmed", "lineas": 1, "total_lc": 5147.7, "total_usd": 1462.0, "oldest": 19, "avg_days": 19.0}, {"doc_num": 696329443, "internal_num": 73444, "client": "SAGA FALABELLA S A", "status": "confirmed", "lineas": 2, "total_lc": 4684.5, "total_usd": 1350.0, "oldest": 13, "avg_days": 13.0}, {"doc_num": 696325971, "internal_num": 65372, "client": "CROSLAND REPUESTOS S.A.C.", "status": "sent", "lineas": 3, "total_lc": 7422.26, "total_usd": 2050.46, "oldest": 71, "avg_days": 71.0}, {"doc_num": 696326184, "internal_num": 65902, "client": "SGS DEL PERU S.A.C.", "status": "sent", "lineas": 1, "total_lc": 1208.55, "total_usd": 350.0, "oldest": 67, "avg_days": 67.0}, {"doc_num": 696326205, "internal_num": 65951, "client": "FARMEX S A", "status": "sent", "lineas": 1, "total_lc": 362.57, "total_usd": 105.0, "oldest": 66, "avg_days": 66.0}, {"doc_num": 696326206, "internal_num": 65954, "client": "FARMEX S A", "status": "sent", "lineas": 1, "total_lc": 362.57, "total_usd": 105.0, "oldest": 66, "avg_days": 66.0}, {"doc_num": 696326422, "internal_num": 66446, "client": "GRUPO LA PATRONA S.A.C.", "status": "sent", "lineas": 11, "total_lc": 19735.43, "total_usd": 5738.71, "oldest": 64, "avg_days": 64.0}, {"doc_num": 696326428, "internal_num": 66465, "client": "FARMEX S A", "status": "sent", "lineas": 2, "total_lc": 281.11, "total_usd": 81.74, "oldest": 64, "avg_days": 64.0}, {"doc_num": 696326496, "internal_num": 66638, "client": "COMPAÑIA MINERA MISKI MAYO S.R.L.", "status": "sent", "lineas": 2, "total_lc": 1059.28, "total_usd": 310.0, "oldest": 63, "avg_days": 63.0}, {"doc_num": 696326498, "internal_num": 66644, "client": "DISTRIBUCIONES DIESEL PERU S.A.C.", "status": "sent", "lineas": 2, "total_lc": 1674.33, "total_usd": 490.0, "oldest": 63, "avg_days": 63.0}, {"doc_num": 696326499, "internal_num": 66647, "client": "DISTRIBUCIONES DIESEL PERU S.A.C.", "status": "sent", "lineas": 3, "total_lc": 7828.15, "total_usd": 2290.94, "oldest": 63, "avg_days": 63.0}, {"doc_num": 696326678, "internal_num": 67084, "client": "SAGA FALABELLA S A", "status": "sent", "lineas": 1, "total_lc": 1420.0, "total_usd": 0.0, "oldest": 61, "avg_days": 61.0}, {"doc_num": 696326679, "internal_num": 67087, "client": "SAGA FALABELLA S A", "status": "sent", "lineas": 1, "total_lc": 1720.0, "total_usd": 0.0, "oldest": 61, "avg_days": 61.0}, {"doc_num": 696326813, "internal_num": 67367, "client": "SCANIA DEL PERU S A", "status": "sent", "lineas": 1, "total_lc": 416.16, "total_usd": 120.0, "oldest": 57, "avg_days": 57.0}, {"doc_num": 696326815, "internal_num": 67371, "client": "SCANIA DEL PERU S A", "status": "sent", "lineas": 1, "total_lc": 6589.2, "total_usd": 1900.0, "oldest": 57, "avg_days": 57.0}, {"doc_num": 696326950, "internal_num": 67684, "client": "FERREYROS S.A.", "status": "sent", "lineas": 1, "total_lc": 1697.36, "total_usd": 490.0, "oldest": 55, "avg_days": 55.0}, {"doc_num": 696327284, "internal_num": 68479, "client": "VITAPRO S.A.", "status": "sent", "lineas": 1, "total_lc": 1992.15, "total_usd": 570.0, "oldest": 50, "avg_days": 50.0}, {"doc_num": 696327325, "internal_num": 68574, "client": "OPERADORA DE SERVICIOS LOGISTICOS S.A.C.", "status": "sent", "lineas": 8, "total_lc": 35197.06, "total_usd": 10070.69, "oldest": 49, "avg_days": 49.0}, {"doc_num": 696327342, "internal_num": 68611, "client": "GLORIA S A", "status": "sent", "lineas": 16, "total_lc": 20220.2, "total_usd": 5548.45, "oldest": 49, "avg_days": 49.0}, {"doc_num": 696327369, "internal_num": 68667, "client": "ARGON PHARMA S.A.C.", "status": "sent", "lineas": 6, "total_lc": 928.92, "total_usd": 265.78, "oldest": 49, "avg_days": 49.0}, {"doc_num": 696327375, "internal_num": 68676, "client": "HIPERMERCADOS TOTTUS S.A.", "status": "sent", "lineas": 3, "total_lc": 819.31, "total_usd": 211.74, "oldest": 46, "avg_days": 46.0}, {"doc_num": 696327376, "internal_num": 68677, "client": "SAGA FALABELLA S A", "status": "sent", "lineas": 6, "total_lc": 5033.07, "total_usd": 1451.71, "oldest": 46, "avg_days": 46.0}, {"doc_num": 696327377, "internal_num": 68678, "client": "SAGA FALABELLA S A", "status": "sent", "lineas": 9, "total_lc": 5986.86, "total_usd": 1719.42, "oldest": 46, "avg_days": 46.0}, {"doc_num": 696327378, "internal_num": 68679, "client": "SAGA FALABELLA S A", "status": "sent", "lineas": 4, "total_lc": 2661.92, "total_usd": 767.79, "oldest": 46, "avg_days": 46.0}, {"doc_num": 696327379, "internal_num": 68680, "client": "SAGA FALABELLA S A", "status": "sent", "lineas": 3, "total_lc": 2355.16, "total_usd": 679.31, "oldest": 46, "avg_days": 46.0}, {"doc_num": 696327380, "internal_num": 68681, "client": "SAGA FALABELLA S A", "status": "sent", "lineas": 3, "total_lc": 2355.16, "total_usd": 679.31, "oldest": 46, "avg_days": 46.0}, {"doc_num": 696327381, "internal_num": 68682, "client": "SAGA FALABELLA S A", "status": "sent", "lineas": 8, "total_lc": 6065.01, "total_usd": 1626.73, "oldest": 46, "avg_days": 46.0}, {"doc_num": 696327382, "internal_num": 68683, "client": "SAGA FALABELLA S A", "status": "sent", "lineas": 9, "total_lc": 57233.85, "total_usd": 2568.6, "oldest": 46, "avg_days": 46.0}, {"doc_num": 696327383, "internal_num": 68684, "client": "SAGA FALABELLA S A", "status": "sent", "lineas": 6, "total_lc": 5312.82, "total_usd": 1532.4, "oldest": 46, "avg_days": 46.0}, {"doc_num": 696327384, "internal_num": 68685, "client": "SAGA FALABELLA S A", "status": "sent", "lineas": 5, "total_lc": 4568.11, "total_usd": 1317.6, "oldest": 46, "avg_days": 46.0}, {"doc_num": 696327396, "internal_num": 68703, "client": "SAGA FALABELLA S A", "status": "sent", "lineas": 3, "total_lc": 3272.6, "total_usd": 943.93, "oldest": 45, "avg_days": 45.0}, {"doc_num": 696327397, "internal_num": 68704, "client": "SAGA FALABELLA S A", "status": "sent", "lineas": 4, "total_lc": 15415.32, "total_usd": 4446.3, "oldest": 45, "avg_days": 45.0}, {"doc_num": 696327398, "internal_num": 68705, "client": "SAGA FALABELLA S A", "status": "sent", "lineas": 5, "total_lc": 2261.0, "total_usd": 652.15, "oldest": 45, "avg_days": 45.0}, {"doc_num": 696327399, "internal_num": 68706, "client": "SAGA FALABELLA S A", "status": "sent", "lineas": 6, "total_lc": 15491.94, "total_usd": 4468.4, "oldest": 45, "avg_days": 45.0}, {"doc_num": 696327400, "internal_num": 68708, "client": "SAGA FALABELLA S A", "status": "sent", "lineas": 3, "total_lc": 13208.33, "total_usd": 3809.73, "oldest": 45, "avg_days": 45.0}, {"doc_num": 696327401, "internal_num": 68709, "client": "SAGA FALABELLA S A", "status": "sent", "lineas": 2, "total_lc": 379.15, "total_usd": 109.36, "oldest": 45, "avg_days": 45.0}, {"doc_num": 696327402, "internal_num": 68710, "client": "SAGA FALABELLA S A", "status": "sent", "lineas": 4, "total_lc": 26494.19, "total_usd": 3809.73, "oldest": 45, "avg_days": 45.0}, {"doc_num": 696327617, "internal_num": 69181, "client": "HUDBAY PERU S.A.C.", "status": "sent", "lineas": 6, "total_lc": 1232.87, "total_usd": 358.6, "oldest": 42, "avg_days": 42.0}, {"doc_num": 696327619, "internal_num": 69189, "client": "HUDBAY PERU S.A.C.", "status": "sent", "lineas": 6, "total_lc": 1232.87, "total_usd": 358.6, "oldest": 42, "avg_days": 42.0}, {"doc_num": 696327623, "internal_num": 69197, "client": "HUDBAY PERU S.A.C.", "status": "sent", "lineas": 1, "total_lc": 895.77, "total_usd": 260.55, "oldest": 42, "avg_days": 42.0}, {"doc_num": 696327678, "internal_num": 69322, "client": "GLORIA S A", "status": "sent", "lineas": 15, "total_lc": 14525.66, "total_usd": 3984.09, "oldest": 42, "avg_days": 42.0}, {"doc_num": 696327734, "internal_num": 69451, "client": "JH LTR", "status": "sent", "lineas": 2, "total_lc": 3212.06, "total_usd": 945.0, "oldest": 41, "avg_days": 41.0}, {"doc_num": 696327783, "internal_num": 69555, "client": "HIPERMERCADOS TOTTUS S.A.", "status": "sent", "lineas": 13, "total_lc": 14290.76, "total_usd": 4173.35, "oldest": 41, "avg_days": 41.0}, {"doc_num": 696327788, "internal_num": 69568, "client": "ILENDER PERU S.A.", "status": "sent", "lineas": 8, "total_lc": 8701.45, "total_usd": 2560.0, "oldest": 40, "avg_days": 40.0}, {"doc_num": 696327862, "internal_num": 69749, "client": "JH LTR", "status": "sent", "lineas": 2, "total_lc": 942.23, "total_usd": 278.19, "oldest": 40, "avg_days": 40.0}, {"doc_num": 696327931, "internal_num": 69928, "client": "HIPERMERCADOS TOTTUS S.A.", "status": "sent", "lineas": 2, "total_lc": 2230.0, "total_usd": 0.0, "oldest": 37, "avg_days": 37.0}, {"doc_num": 696327982, "internal_num": 70056, "client": "CORPORACION MARA S.A.", "status": "sent", "lineas": 1, "total_lc": 21963.5, "total_usd": 6500.0, "oldest": 36, "avg_days": 36.0}, {"doc_num": 696328017, "internal_num": 70135, "client": "LAMINADOS S.A.C.", "status": "sent", "lineas": 1, "total_lc": 184.16, "total_usd": 54.5, "oldest": 36, "avg_days": 36.0}, {"doc_num": 696328510, "internal_num": 71214, "client": "HIPERMERCADOS TOTTUS S.A.", "status": "sent", "lineas": 1, "total_lc": 1722.0, "total_usd": 500.0, "oldest": 29, "avg_days": 29.0}, {"doc_num": 696329375, "internal_num": 73279, "client": "HIPERMERCADOS TOTTUS S.A.", "status": "sent", "lineas": 3, "total_lc": 7589.61, "total_usd": 2169.7, "oldest": 14, "avg_days": 14.0}]},
+  RIVAS:{total:69,pending:47,sent:22,confirmed:0,total_lc:342498.92,total_usd:98970.28,max_days:76,accounts:[{"doc_num": 696325698, "internal_num": 64743, "client": "MOLITALIA S.A", "status": "pending", "lineas": 1, "total_lc": 111.91, "total_usd": 32.78, "oldest": 76, "avg_days": 76.0}, {"doc_num": 696326437, "internal_num": 66491, "client": "MOLITALIA S.A", "status": "pending", "lineas": 1, "total_lc": 4534.77, "total_usd": 1318.63, "oldest": 64, "avg_days": 64.0}, {"doc_num": 696326643, "internal_num": 66992, "client": "RANSA COMERCIAL S.A.C.", "status": "pending", "lineas": 1, "total_lc": 3686.83, "total_usd": 1067.41, "oldest": 61, "avg_days": 61.0}, {"doc_num": 696326831, "internal_num": 67409, "client": "MOLITALIA S.A", "status": "pending", "lineas": 5, "total_lc": 73270.73, "total_usd": 21127.66, "oldest": 57, "avg_days": 57.0}, {"doc_num": 696326833, "internal_num": 67413, "client": "LAMINADOS S.A.C.", "status": "pending", "lineas": 1, "total_lc": 598.09, "total_usd": 172.46, "oldest": 57, "avg_days": 57.0}, {"doc_num": 696326834, "internal_num": 67415, "client": "PROCESADORA TORRE BLANCA S.A.C", "status": "pending", "lineas": 1, "total_lc": 89.09, "total_usd": 25.69, "oldest": 57, "avg_days": 57.0}, {"doc_num": 696326870, "internal_num": 67494, "client": "FARMEX S A", "status": "pending", "lineas": 1, "total_lc": 130.81, "total_usd": 37.72, "oldest": 57, "avg_days": 57.0}, {"doc_num": 696326967, "internal_num": 67723, "client": "PROCESADORA TORRE BLANCA S.A.C", "status": "pending", "lineas": 1, "total_lc": 89.09, "total_usd": 25.69, "oldest": 55, "avg_days": 55.0}, {"doc_num": 696327028, "internal_num": 67866, "client": "VERDUM PERU S.A.C.", "status": "pending", "lineas": 12, "total_lc": 2589.43, "total_usd": 746.66, "oldest": 55, "avg_days": 55.0}, {"doc_num": 696327029, "internal_num": 67868, "client": "PERUANA DE MOLDEADOS S.A.C", "status": "pending", "lineas": 7, "total_lc": 3522.0, "total_usd": 1015.57, "oldest": 55, "avg_days": 55.0}, {"doc_num": 696327042, "internal_num": 67902, "client": "CORPORACION LIFE SAC", "status": "pending", "lineas": 1, "total_lc": 989.02, "total_usd": 285.35, "oldest": 54, "avg_days": 54.0}, {"doc_num": 696327058, "internal_num": 67943, "client": "MOLITALIA S.A", "status": "pending", "lineas": 1, "total_lc": 3949.3, "total_usd": 1139.44, "oldest": 54, "avg_days": 54.0}, {"doc_num": 696327137, "internal_num": 68134, "client": "COLOREXA S.A.C.", "status": "pending", "lineas": 1, "total_lc": 1779.81, "total_usd": 510.56, "oldest": 51, "avg_days": 51.0}, {"doc_num": 696327198, "internal_num": 68277, "client": "MOLITALIA S.A", "status": "pending", "lineas": 2, "total_lc": 8679.75, "total_usd": 2489.89, "oldest": 51, "avg_days": 51.0}, {"doc_num": 696327453, "internal_num": 68822, "client": "SGS DEL PERU S.A.C.", "status": "pending", "lineas": 1, "total_lc": 1213.45, "total_usd": 350.0, "oldest": 44, "avg_days": 44.0}, {"doc_num": 696327495, "internal_num": 68917, "client": "FARMEX S A", "status": "pending", "lineas": 1, "total_lc": 453.48, "total_usd": 130.8, "oldest": 44, "avg_days": 44.0}, {"doc_num": 696327583, "internal_num": 69103, "client": "METALPREN S A", "status": "pending", "lineas": 1, "total_lc": 9035.83, "total_usd": 2619.84, "oldest": 43, "avg_days": 43.0}, {"doc_num": 696325243, "internal_num": 63637, "client": "HONDA DEL PERU S.A", "status": "pending", "lineas": 3, "total_lc": 2401.84, "total_usd": 706.63, "oldest": 41, "avg_days": 41.0}, {"doc_num": 696327682, "internal_num": 69331, "client": "SALOG S.A.", "status": "pending", "lineas": 1, "total_lc": 975.5, "total_usd": 283.74, "oldest": 41, "avg_days": 41.0}, {"doc_num": 696327941, "internal_num": 69949, "client": "QUIMTIA S.A.", "status": "pending", "lineas": 1, "total_lc": 440.05, "total_usd": 130.0, "oldest": 37, "avg_days": 37.0}, {"doc_num": 696328029, "internal_num": 70168, "client": "PROCESADORA TORRE BLANCA S.A.C", "status": "pending", "lineas": 1, "total_lc": 127.87, "total_usd": 37.72, "oldest": 35, "avg_days": 35.0}, {"doc_num": 696328108, "internal_num": 70384, "client": "CLOROX PERU S.A.", "status": "pending", "lineas": 2, "total_lc": 6933.37, "total_usd": 2017.86, "oldest": 34, "avg_days": 34.0}, {"doc_num": 696328391, "internal_num": 70941, "client": "MOLITALIA S.A", "status": "pending", "lineas": 3, "total_lc": 3746.83, "total_usd": 1088.56, "oldest": 30, "avg_days": 30.0}, {"doc_num": 696328503, "internal_num": 71200, "client": "COLOREXA S.A.C.", "status": "pending", "lineas": 1, "total_lc": 4646.16, "total_usd": 1349.06, "oldest": 29, "avg_days": 29.0}, {"doc_num": 696328522, "internal_num": 71245, "client": "QUIMTIA S.A.", "status": "pending", "lineas": 1, "total_lc": 15498.0, "total_usd": 4500.0, "oldest": 29, "avg_days": 29.0}, {"doc_num": 696328795, "internal_num": 71923, "client": "ALS PERU S.A.", "status": "pending", "lineas": 1, "total_lc": 260.85, "total_usd": 75.0, "oldest": 23, "avg_days": 23.0}, {"doc_num": 696328797, "internal_num": 71927, "client": "RANSA COMERCIAL S.A.C.", "status": "pending", "lineas": 1, "total_lc": 3712.45, "total_usd": 1067.41, "oldest": 23, "avg_days": 23.0}, {"doc_num": 696328831, "internal_num": 72010, "client": "PERUANA DE MOLDEADOS S.A.C", "status": "pending", "lineas": 4, "total_lc": 5308.8, "total_usd": 1512.48, "oldest": 22, "avg_days": 22.0}, {"doc_num": 696328847, "internal_num": 72048, "client": "PROCESADORA CAMPO VERDE S.A.C.", "status": "pending", "lineas": 10, "total_lc": 9765.84, "total_usd": 2782.29, "oldest": 22, "avg_days": 22.0}, {"doc_num": 696328907, "internal_num": 72194, "client": "CLOROX PERU S.A.", "status": "pending", "lineas": 1, "total_lc": 246.65, "total_usd": 70.09, "oldest": 21, "avg_days": 21.0}, {"doc_num": 696329340, "internal_num": 73179, "client": "CONSORCIO FRAP S.A.C", "status": "pending", "lineas": 6, "total_lc": 21295.87, "total_usd": 6046.53, "oldest": 15, "avg_days": 15.0}, {"doc_num": 696329593, "internal_num": 73798, "client": "CROSLAND REPUESTOS S.A.C.", "status": "pending", "lineas": 3, "total_lc": 245.52, "total_usd": 70.94, "oldest": 12, "avg_days": 12.0}, {"doc_num": 696329633, "internal_num": 73872, "client": "RANSA COMERCIAL S.A.C.", "status": "pending", "lineas": 5, "total_lc": 22738.02, "total_usd": 6590.73, "oldest": 11, "avg_days": 11.0}, {"doc_num": 696329640, "internal_num": 73884, "client": "REDONDOS S A", "status": "pending", "lineas": 1, "total_lc": 593.06, "total_usd": 171.9, "oldest": 11, "avg_days": 11.0}, {"doc_num": 696329760, "internal_num": 74150, "client": "REACTIVOS NACIONALES S A", "status": "pending", "lineas": 1, "total_lc": 467.48, "total_usd": 135.5, "oldest": 9, "avg_days": 9.0}, {"doc_num": 696330052, "internal_num": 74866, "client": "ALS PERU S.A.", "status": "pending", "lineas": 1, "total_lc": 3710.56, "total_usd": 1083.06, "oldest": 6, "avg_days": 6.0}, {"doc_num": 696330059, "internal_num": 74884, "client": "GRUPO LA PATRONA S.A.C.", "status": "pending", "lineas": 1, "total_lc": 107.54, "total_usd": 31.39, "oldest": 6, "avg_days": 6.0}, {"doc_num": 696330061, "internal_num": 74888, "client": "GRUPO LA PATRONA S.A.C.", "status": "pending", "lineas": 2, "total_lc": 20.28, "total_usd": 5.92, "oldest": 6, "avg_days": 6.0}, {"doc_num": 696330063, "internal_num": 74891, "client": "ALS PERU S.A.", "status": "pending", "lineas": 3, "total_lc": 1426.83, "total_usd": 416.47, "oldest": 6, "avg_days": 6.0}, {"doc_num": 696330095, "internal_num": 74968, "client": "DINAMICA IMPLEMENTOS & PECAS S.A.C.", "status": "pending", "lineas": 6, "total_lc": 1105.61, "total_usd": 323.37, "oldest": 5, "avg_days": 5.0}, {"doc_num": 696330171, "internal_num": 75145, "client": "CROSLAND REPUESTOS S.A.C.", "status": "pending", "lineas": 1, "total_lc": 264.15, "total_usd": 76.9, "oldest": 4, "avg_days": 4.0}, {"doc_num": 696330172, "internal_num": 75147, "client": "PROCESADORA TORRE BLANCA S.A.C", "status": "pending", "lineas": 7, "total_lc": 3128.05, "total_usd": 910.64, "oldest": 3, "avg_days": 3.0}, {"doc_num": 696330173, "internal_num": 75149, "client": "GLORIA S A", "status": "pending", "lineas": 1, "total_lc": 450.53, "total_usd": 131.16, "oldest": 3, "avg_days": 3.0}, {"doc_num": 696330191, "internal_num": 75198, "client": "PROCESADORA TORRE BLANCA S.A.C", "status": "pending", "lineas": 5, "total_lc": 1556.61, "total_usd": 453.16, "oldest": 2, "avg_days": 2.0}, {"doc_num": 696330192, "internal_num": 75199, "client": "PROCESADORA TORRE BLANCA S.A.C", "status": "pending", "lineas": 5, "total_lc": 1556.61, "total_usd": 453.16, "oldest": 2, "avg_days": 2.0}, {"doc_num": 696330264, "internal_num": 75361, "client": "SNACKS AMERICA LATINA SRL", "status": "pending", "lineas": 1, "total_lc": 10181.03, "total_usd": 2963.91, "oldest": 2, "avg_days": 2.0}, {"doc_num": 696330266, "internal_num": 75364, "client": "SNACKS AMERICA LATINA SRL", "status": "pending", "lineas": 1, "total_lc": 10181.03, "total_usd": 2963.91, "oldest": 2, "avg_days": 2.0}, {"doc_num": 696325674, "internal_num": 64688, "client": "ALICORP S.A.A.", "status": "sent", "lineas": 2, "total_lc": 5785.09, "total_usd": 1694.52, "oldest": 76, "avg_days": 76.0}, {"doc_num": 696325690, "internal_num": 64720, "client": "ALICORP S.A.A.", "status": "sent", "lineas": 1, "total_lc": 2400.66, "total_usd": 703.18, "oldest": 76, "avg_days": 76.0}, {"doc_num": 696325975, "internal_num": 65381, "client": "MOLITALIA S.A", "status": "sent", "lineas": 4, "total_lc": 24523.3, "total_usd": 7020.7, "oldest": 71, "avg_days": 71.0}, {"doc_num": 696326211, "internal_num": 65968, "client": "ALICORP S.A.A.", "status": "sent", "lineas": 6, "total_lc": 9551.89, "total_usd": 2766.26, "oldest": 65, "avg_days": 65.0}, {"doc_num": 696327140, "internal_num": 68142, "client": "RANSA COMERCIAL S.A.C.", "status": "sent", "lineas": 1, "total_lc": 3720.99, "total_usd": 1067.41, "oldest": 51, "avg_days": 51.0}, {"doc_num": 696327467, "internal_num": 68859, "client": "MOLITALIA S.A", "status": "sent", "lineas": 2, "total_lc": 3467.0, "total_usd": 1000.0, "oldest": 44, "avg_days": 44.0}, {"doc_num": 696327801, "internal_num": 69610, "client": "QUIMTIA S.A.", "status": "sent", "lineas": 3, "total_lc": 2088.1, "total_usd": 616.5, "oldest": 40, "avg_days": 40.0}, {"doc_num": 696327835, "internal_num": 69688, "client": "REACTIVOS NACIONALES S A", "status": "sent", "lineas": 1, "total_lc": 1387.99, "total_usd": 409.8, "oldest": 40, "avg_days": 40.0}, {"doc_num": 696327836, "internal_num": 69690, "client": "REACTIVOS NACIONALES S A", "status": "sent", "lineas": 1, "total_lc": 1387.99, "total_usd": 409.8, "oldest": 40, "avg_days": 40.0}, {"doc_num": 696327916, "internal_num": 69890, "client": "QUIMTIA S.A.", "status": "sent", "lineas": 3, "total_lc": 2086.86, "total_usd": 616.5, "oldest": 37, "avg_days": 37.0}, {"doc_num": 696327919, "internal_num": 69894, "client": "QUIMTIA S.A.", "status": "sent", "lineas": 3, "total_lc": 2086.86, "total_usd": 616.5, "oldest": 37, "avg_days": 37.0}, {"doc_num": 696327942, "internal_num": 69953, "client": "QUIMTIA S.A.", "status": "sent", "lineas": 3, "total_lc": 2086.86, "total_usd": 616.5, "oldest": 37, "avg_days": 37.0}, {"doc_num": 696328031, "internal_num": 70186, "client": "ALS PERU S.A.", "status": "sent", "lineas": 1, "total_lc": 8908.72, "total_usd": 2627.94, "oldest": 35, "avg_days": 35.0}, {"doc_num": 696328398, "internal_num": 70957, "client": "BANCO CENTRAL DE RESERVA DEL PERU", "status": "sent", "lineas": 1, "total_lc": 1204.7, "total_usd": 350.0, "oldest": 30, "avg_days": 30.0}, {"doc_num": 696328600, "internal_num": 71420, "client": "CLOROX PERU S.A.", "status": "sent", "lineas": 4, "total_lc": 7219.28, "total_usd": 2097.41, "oldest": 28, "avg_days": 28.0}, {"doc_num": 696328769, "internal_num": 71847, "client": "BANCO CENTRAL DE RESERVA DEL PERU", "status": "sent", "lineas": 8, "total_lc": 3081.58, "total_usd": 886.02, "oldest": 25, "avg_days": 25.0}, {"doc_num": 696328908, "internal_num": 72196, "client": "CLOROX PERU S.A.", "status": "sent", "lineas": 3, "total_lc": 5272.8, "total_usd": 1498.38, "oldest": 21, "avg_days": 21.0}, {"doc_num": 696328988, "internal_num": 72374, "client": "ARGON PHARMA S.A.C.", "status": "sent", "lineas": 1, "total_lc": 299.12, "total_usd": 85.0, "oldest": 21, "avg_days": 21.0}, {"doc_num": 696329222, "internal_num": 72910, "client": "FERREYROS S.A.", "status": "sent", "lineas": 2, "total_lc": 757.02, "total_usd": 215.0, "oldest": 16, "avg_days": 16.0}, {"doc_num": 696329336, "internal_num": 73166, "client": "AGROEMPAQUES S.A.", "status": "sent", "lineas": 6, "total_lc": 2459.2, "total_usd": 698.24, "oldest": 15, "avg_days": 15.0}, {"doc_num": 696330017, "internal_num": 74781, "client": "CORPORACION LIFE SAC", "status": "sent", "lineas": 3, "total_lc": 2036.0, "total_usd": 594.28, "oldest": 6, "avg_days": 6.0}, {"doc_num": 696330313, "internal_num": 75490, "client": "SKF DEL PERU S.A.", "status": "sent", "lineas": 1, "total_lc": 2870.53, "total_usd": 834.7, "oldest": 1, "avg_days": 1.0}]},
+  SARAVIA:{total:147,pending:20,sent:126,confirmed:1,total_lc:969360.06,total_usd:277348.32,max_days:92,accounts:[{"doc_num": 696324760, "internal_num": 62510, "client": "SNACKS AMERICA LATINA SRL", "status": "confirmed", "lineas": 1, "total_lc": 1436.0, "total_usd": 0.0, "oldest": 92, "avg_days": 92.0}, {"doc_num": 696326621, "internal_num": 66948, "client": "VENTCORP PERU S.A.C.", "status": "pending", "lineas": 5, "total_lc": 10949.85, "total_usd": 3187.73, "oldest": 62, "avg_days": 62.0}, {"doc_num": 696326697, "internal_num": 67126, "client": "CONTINENTAL S.A.C.", "status": "pending", "lineas": 1, "total_lc": 2719.64, "total_usd": 782.18, "oldest": 59, "avg_days": 59.0}, {"doc_num": 696326701, "internal_num": 67137, "client": "UNION DE CERVECERIAS PERUANAS BACKUS Y JOHNSTON S.A.A", "status": "pending", "lineas": 8, "total_lc": 7782.63, "total_usd": 2238.32, "oldest": 58, "avg_days": 58.0}, {"doc_num": 696326969, "internal_num": 67727, "client": "TEXTILES CAMONES S.A. BIC", "status": "pending", "lineas": 1, "total_lc": 2254.2, "total_usd": 650.0, "oldest": 55, "avg_days": 55.0}, {"doc_num": 696327190, "internal_num": 68256, "client": "COMERCIAL MADERERA ANDINA S.R.LTDA", "status": "pending", "lineas": 2, "total_lc": 388.51, "total_usd": 111.45, "oldest": 51, "avg_days": 51.0}, {"doc_num": 696327242, "internal_num": 68383, "client": "SIKA PERU S.A.C.", "status": "pending", "lineas": 4, "total_lc": 1878.14, "total_usd": 537.38, "oldest": 50, "avg_days": 50.0}, {"doc_num": 696327405, "internal_num": 68715, "client": "SHERWIN-WILLIAMS PERU S.R.L.", "status": "pending", "lineas": 2, "total_lc": 20.52, "total_usd": 5.92, "oldest": 45, "avg_days": 45.0}, {"doc_num": 696327406, "internal_num": 68717, "client": "SHERWIN-WILLIAMS PERU S.R.L.", "status": "pending", "lineas": 2, "total_lc": 20.52, "total_usd": 5.92, "oldest": 45, "avg_days": 45.0}, {"doc_num": 696327407, "internal_num": 68719, "client": "SHERWIN-WILLIAMS PERU S.R.L.", "status": "pending", "lineas": 2, "total_lc": 20.52, "total_usd": 5.92, "oldest": 45, "avg_days": 45.0}, {"doc_num": 696328359, "internal_num": 70869, "client": "TAI LOY S.A.", "status": "pending", "lineas": 1, "total_lc": 543.84, "total_usd": 158.0, "oldest": 30, "avg_days": 30.0}, {"doc_num": 696328477, "internal_num": 71135, "client": "TAI LOY S.A.", "status": "pending", "lineas": 1, "total_lc": 49.01, "total_usd": 14.24, "oldest": 30, "avg_days": 30.0}, {"doc_num": 696328824, "internal_num": 71991, "client": "SKECHERS PERU S.R.L.", "status": "pending", "lineas": 2, "total_lc": 2537.9, "total_usd": 729.7, "oldest": 23, "avg_days": 23.0}, {"doc_num": 696329008, "internal_num": 72420, "client": "SKECHERS PERU S.R.L.", "status": "pending", "lineas": 1, "total_lc": 1832.31, "total_usd": 520.69, "oldest": 21, "avg_days": 21.0}, {"doc_num": 696329240, "internal_num": 72953, "client": "TDP CORP S.A.", "status": "pending", "lineas": 3, "total_lc": 3807.54, "total_usd": 1081.38, "oldest": 16, "avg_days": 16.0}, {"doc_num": 696329431, "internal_num": 73409, "client": "ILENDER PERU S.A.", "status": "pending", "lineas": 2, "total_lc": 2102.26, "total_usd": 605.84, "oldest": 13, "avg_days": 13.0}, {"doc_num": 696329583, "internal_num": 73780, "client": "METSO PERU S.A.", "status": "pending", "lineas": 1, "total_lc": 227.32, "total_usd": 65.68, "oldest": 12, "avg_days": 12.0}, {"doc_num": 696329806, "internal_num": 74264, "client": "LABORATORIO HOFARM S.A.C.", "status": "pending", "lineas": 1, "total_lc": 227.87, "total_usd": 66.24, "oldest": 8, "avg_days": 8.0}, {"doc_num": 696330093, "internal_num": 74962, "client": "DELTA PLUS PERU S.A.C.", "status": "pending", "lineas": 1, "total_lc": 277.73, "total_usd": 81.23, "oldest": 5, "avg_days": 5.0}, {"doc_num": 696330259, "internal_num": 75349, "client": "DHL SUPPLY CHAIN DE LIMA S.A.C.", "status": "pending", "lineas": 2, "total_lc": 9472.84, "total_usd": 2757.74, "oldest": 2, "avg_days": 2.0}, {"doc_num": 696330367, "internal_num": 75609, "client": "UNION DE CERVECERIAS PERUANAS BACKUS Y JOHNSTON S.A.A", "status": "pending", "lineas": 11, "total_lc": 29700.01, "total_usd": 8656.37, "oldest": 0, "avg_days": 0.0}, {"doc_num": 696325607, "internal_num": 64521, "client": "QUIMTIA S.A.", "status": "sent", "lineas": 3, "total_lc": 2101.03, "total_usd": 616.5, "oldest": 77, "avg_days": 77.0}, {"doc_num": 696325608, "internal_num": 64525, "client": "QUIMTIA S.A.", "status": "sent", "lineas": 3, "total_lc": 2101.03, "total_usd": 616.5, "oldest": 77, "avg_days": 77.0}, {"doc_num": 696325609, "internal_num": 64528, "client": "QUIMTIA S.A.", "status": "sent", "lineas": 3, "total_lc": 2101.03, "total_usd": 616.5, "oldest": 77, "avg_days": 77.0}, {"doc_num": 696325626, "internal_num": 64565, "client": "QUIMTIA S.A.", "status": "sent", "lineas": 3, "total_lc": 2101.03, "total_usd": 616.5, "oldest": 77, "avg_days": 77.0}, {"doc_num": 696326006, "internal_num": 65468, "client": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "status": "sent", "lineas": 6, "total_lc": 5496.42, "total_usd": 1592.7, "oldest": 70, "avg_days": 70.0}, {"doc_num": 696326007, "internal_num": 65471, "client": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "status": "sent", "lineas": 4, "total_lc": 3934.52, "total_usd": 1076.36, "oldest": 70, "avg_days": 70.0}, {"doc_num": 696325352, "internal_num": 63906, "client": "TIENDAS POR DEPARTAMENTO RIPLEY S.A.", "status": "sent", "lineas": 9, "total_lc": 11151.45, "total_usd": 3254.0, "oldest": 69, "avg_days": 69.0}, {"doc_num": 696326088, "internal_num": 65671, "client": "SEKUR PERU SA", "status": "sent", "lineas": 8, "total_lc": 3959.49, "total_usd": 1155.38, "oldest": 69, "avg_days": 69.0}, {"doc_num": 696326116, "internal_num": 65740, "client": "ALICORP S.A.A.", "status": "sent", "lineas": 1, "total_lc": 8224.8, "total_usd": 2400.0, "oldest": 69, "avg_days": 69.0}, {"doc_num": 696325629, "internal_num": 64571, "client": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "status": "sent", "lineas": 6, "total_lc": 40142.85, "total_usd": 11625.5, "oldest": 66, "avg_days": 66.0}, {"doc_num": 696326595, "internal_num": 66879, "client": "ILENDER PERU S.A.", "status": "sent", "lineas": 2, "total_lc": 608.0, "total_usd": 177.0, "oldest": 62, "avg_days": 62.0}, {"doc_num": 696326655, "internal_num": 67024, "client": "UNION DE CERVECERIAS PERUANAS BACKUS Y JOHNSTON S.A.A", "status": "sent", "lineas": 1, "total_lc": 1208.9, "total_usd": 350.0, "oldest": 61, "avg_days": 61.0}, {"doc_num": 696326683, "internal_num": 67096, "client": "EMPRESAS COMERCIALES S.A.", "status": "sent", "lineas": 10, "total_lc": 2231.93, "total_usd": 646.19, "oldest": 61, "avg_days": 61.0}, {"doc_num": 696326705, "internal_num": 67148, "client": "WSP PERU S.A.", "status": "sent", "lineas": 8, "total_lc": 8133.29, "total_usd": 2339.17, "oldest": 58, "avg_days": 58.0}, {"doc_num": 696326712, "internal_num": 67166, "client": "EMPRESAS COMERCIALES S.A.", "status": "sent", "lineas": 10, "total_lc": 414.79, "total_usd": 119.29, "oldest": 58, "avg_days": 58.0}, {"doc_num": 696326809, "internal_num": 67352, "client": "BAKELS PERU S.A.C.", "status": "sent", "lineas": 5, "total_lc": 3895.46, "total_usd": 1120.35, "oldest": 58, "avg_days": 58.0}, {"doc_num": 696326946, "internal_num": 67676, "client": "TEXTILES CAMONES S.A. BIC", "status": "sent", "lineas": 2, "total_lc": 3088.78, "total_usd": 891.68, "oldest": 56, "avg_days": 56.0}, {"doc_num": 696326947, "internal_num": 67677, "client": "TEXTILES CAMONES S.A. BIC", "status": "sent", "lineas": 1, "total_lc": 11632.01, "total_usd": 3357.97, "oldest": 56, "avg_days": 56.0}, {"doc_num": 696326948, "internal_num": 67680, "client": "TEXTILES CAMONES S.A. BIC", "status": "sent", "lineas": 1, "total_lc": 2424.8, "total_usd": 700.0, "oldest": 56, "avg_days": 56.0}, {"doc_num": 696326959, "internal_num": 67704, "client": "TEXTILES CAMONES S.A. BIC", "status": "sent", "lineas": 1, "total_lc": 1144.44, "total_usd": 330.0, "oldest": 55, "avg_days": 55.0}, {"doc_num": 696326966, "internal_num": 67721, "client": "TEXTILES CAMONES S.A. BIC", "status": "sent", "lineas": 1, "total_lc": 1213.8, "total_usd": 350.0, "oldest": 55, "avg_days": 55.0}, {"doc_num": 696326976, "internal_num": 67747, "client": "TEXTILES CAMONES S.A. BIC", "status": "sent", "lineas": 1, "total_lc": 1213.8, "total_usd": 350.0, "oldest": 55, "avg_days": 55.0}, {"doc_num": 696326977, "internal_num": 67750, "client": "TEXTILES CAMONES S.A. BIC", "status": "sent", "lineas": 1, "total_lc": 2254.2, "total_usd": 650.0, "oldest": 55, "avg_days": 55.0}, {"doc_num": 696326987, "internal_num": 67775, "client": "CORPORACION DE INVERSIONES Y SERVICIOS S.A.C.", "status": "sent", "lineas": 1, "total_lc": 20270.63, "total_usd": 5845.05, "oldest": 55, "avg_days": 55.0}, {"doc_num": 696326988, "internal_num": 67777, "client": "CONTE GROUP S.A.C.", "status": "sent", "lineas": 2, "total_lc": 5108.5, "total_usd": 1473.04, "oldest": 55, "avg_days": 55.0}, {"doc_num": 696327057, "internal_num": 67941, "client": "SHERWIN-WILLIAMS PERU S.R.L.", "status": "sent", "lineas": 1, "total_lc": 779.85, "total_usd": 225.0, "oldest": 54, "avg_days": 54.0}, {"doc_num": 696327090, "internal_num": 68021, "client": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "status": "sent", "lineas": 2, "total_lc": 384.15, "total_usd": 64.3, "oldest": 53, "avg_days": 53.0}, {"doc_num": 696327091, "internal_num": 68023, "client": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "status": "sent", "lineas": 2, "total_lc": 3593.97, "total_usd": 933.44, "oldest": 53, "avg_days": 53.0}, {"doc_num": 696327110, "internal_num": 68071, "client": "LABORATORIO HOFARM S.A.C.", "status": "sent", "lineas": 5, "total_lc": 29298.3, "total_usd": 8404.56, "oldest": 51, "avg_days": 51.0}, {"doc_num": 696327113, "internal_num": 68076, "client": "LABORATORIO HOFARM S.A.C.", "status": "sent", "lineas": 3, "total_lc": 28277.18, "total_usd": 8111.64, "oldest": 51, "avg_days": 51.0}, {"doc_num": 696327184, "internal_num": 68244, "client": "COMERCIAL MADERERA ANDINA S.R.LTDA", "status": "sent", "lineas": 5, "total_lc": 1636.12, "total_usd": 469.34, "oldest": 51, "avg_days": 51.0}, {"doc_num": 696327219, "internal_num": 68324, "client": "INGENAC EMPRESA INDIVIDUAL DE RESPONSABILIDAD LIMITADA - INGENAC E.I.R.L.", "status": "sent", "lineas": 1, "total_lc": 1153.35, "total_usd": 330.0, "oldest": 50, "avg_days": 50.0}, {"doc_num": 696327229, "internal_num": 68353, "client": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "status": "sent", "lineas": 7, "total_lc": 7407.34, "total_usd": 2119.41, "oldest": 50, "avg_days": 50.0}, {"doc_num": 696327256, "internal_num": 68421, "client": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "status": "sent", "lineas": 9, "total_lc": 4137.31, "total_usd": 1183.78, "oldest": 50, "avg_days": 50.0}, {"doc_num": 696327370, "internal_num": 68669, "client": "MARINA DE GUERRA DEL PERU", "status": "sent", "lineas": 1, "total_lc": 14679.0, "total_usd": 4200.0, "oldest": 49, "avg_days": 49.0}, {"doc_num": 696327371, "internal_num": 68670, "client": "JULCER SERVICIOS GENERALES S.A.C.", "status": "sent", "lineas": 1, "total_lc": 14679.0, "total_usd": 4200.0, "oldest": 49, "avg_days": 49.0}, {"doc_num": 696327372, "internal_num": 68671, "client": "LENMEX CORPORATION S.A.C.", "status": "sent", "lineas": 1, "total_lc": 7339.5, "total_usd": 2100.0, "oldest": 49, "avg_days": 49.0}, {"doc_num": 696327373, "internal_num": 68672, "client": "SALOG S.A.", "status": "sent", "lineas": 1, "total_lc": 2621.25, "total_usd": 750.0, "oldest": 49, "avg_days": 49.0}, {"doc_num": 696327410, "internal_num": 68726, "client": "DIMEXA S.A.", "status": "sent", "lineas": 7, "total_lc": 1602.48, "total_usd": 462.21, "oldest": 44, "avg_days": 44.0}, {"doc_num": 696327487, "internal_num": 68899, "client": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "status": "sent", "lineas": 8, "total_lc": 8961.54, "total_usd": 2584.81, "oldest": 44, "avg_days": 44.0}, {"doc_num": 696327532, "internal_num": 68992, "client": "JECAUD SERVIS S.A.C.", "status": "sent", "lineas": 1, "total_lc": 6208.2, "total_usd": 1800.0, "oldest": 43, "avg_days": 43.0}, {"doc_num": 696327563, "internal_num": 69057, "client": "TAI LOY S.A.", "status": "sent", "lineas": 1, "total_lc": 2697.74, "total_usd": 782.18, "oldest": 43, "avg_days": 43.0}, {"doc_num": 696327565, "internal_num": 69061, "client": "MITEC FORKLIFT SERVICE S.A.C.", "status": "sent", "lineas": 2, "total_lc": 12274.75, "total_usd": 3558.93, "oldest": 43, "avg_days": 43.0}, {"doc_num": 696327572, "internal_num": 69077, "client": "INTRADEVCO INDUSTRIAL S.A.", "status": "sent", "lineas": 3, "total_lc": 18555.62, "total_usd": 5380.0, "oldest": 43, "avg_days": 43.0}, {"doc_num": 696327679, "internal_num": 69323, "client": "CANDELARIA BRANDS S.A.C.", "status": "sent", "lineas": 1, "total_lc": 2493.1, "total_usd": 725.16, "oldest": 42, "avg_days": 42.0}, {"doc_num": 696327761, "internal_num": 69514, "client": "PEREZ MARISCAL MIRIAM ROXANA", "status": "sent", "lineas": 1, "total_lc": 3681.32, "total_usd": 1083.06, "oldest": 41, "avg_days": 41.0}, {"doc_num": 696327775, "internal_num": 69539, "client": "JECAUD SERVIS S.A.C.", "status": "sent", "lineas": 1, "total_lc": 4894.56, "total_usd": 1440.0, "oldest": 41, "avg_days": 41.0}, {"doc_num": 696327859, "internal_num": 69743, "client": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "status": "sent", "lineas": 8, "total_lc": 1447.75, "total_usd": 334.44, "oldest": 40, "avg_days": 40.0}, {"doc_num": 696327948, "internal_num": 69968, "client": "F Y D INVERSIONES S.A.C.", "status": "sent", "lineas": 2, "total_lc": 4802.37, "total_usd": 1421.24, "oldest": 36, "avg_days": 36.0}, {"doc_num": 696327949, "internal_num": 69972, "client": "BEILIN S.A.C.", "status": "sent", "lineas": 1, "total_lc": 1182.65, "total_usd": 350.0, "oldest": 36, "avg_days": 36.0}, {"doc_num": 696327962, "internal_num": 70007, "client": "AUTOMOTORES GILDEMEISTER PERU S.A.C.", "status": "sent", "lineas": 3, "total_lc": 4402.84, "total_usd": 1303.0, "oldest": 36, "avg_days": 36.0}, {"doc_num": 696328018, "internal_num": 70137, "client": "TEXTILES CAMONES S.A. BIC", "status": "sent", "lineas": 1, "total_lc": 405.48, "total_usd": 120.0, "oldest": 35, "avg_days": 35.0}, {"doc_num": 696328248, "internal_num": 70690, "client": "SUCKOT S.A.C.", "status": "sent", "lineas": 2, "total_lc": 1357.36, "total_usd": 395.04, "oldest": 33, "avg_days": 33.0}, {"doc_num": 696328475, "internal_num": 71130, "client": "YURA S.A.", "status": "sent", "lineas": 8, "total_lc": 3912.94, "total_usd": 1136.82, "oldest": 30, "avg_days": 30.0}, {"doc_num": 696328479, "internal_num": 71139, "client": "APILADORES Y MONTACARGAS S.A.C. -APIMONT S.A.C.", "status": "sent", "lineas": 1, "total_lc": 9718.49, "total_usd": 2823.5, "oldest": 30, "avg_days": 30.0}, {"doc_num": 696328507, "internal_num": 71209, "client": "METSO PERU S.A.", "status": "sent", "lineas": 6, "total_lc": 4617.21, "total_usd": 1340.65, "oldest": 29, "avg_days": 29.0}, {"doc_num": 696328514, "internal_num": 71226, "client": "PERUANA DE MOLDEADOS S.A.C", "status": "sent", "lineas": 4, "total_lc": 3643.83, "total_usd": 1058.02, "oldest": 29, "avg_days": 29.0}, {"doc_num": 696328542, "internal_num": 71292, "client": "SK RENTAL S.A.C.", "status": "sent", "lineas": 1, "total_lc": 723.24, "total_usd": 210.0, "oldest": 29, "avg_days": 29.0}, {"doc_num": 696328603, "internal_num": 71427, "client": "GREY INVERSIONES S.A.C.", "status": "sent", "lineas": 1, "total_lc": 32699.0, "total_usd": 9500.0, "oldest": 28, "avg_days": 28.0}, {"doc_num": 696328638, "internal_num": 71523, "client": "HEINZ - GLAS PERU S.A.C.", "status": "sent", "lineas": 1, "total_lc": 653.98, "total_usd": 190.0, "oldest": 28, "avg_days": 28.0}, {"doc_num": 696328640, "internal_num": 71529, "client": "HEINZ - GLAS PERU S.A.C.", "status": "sent", "lineas": 1, "total_lc": 653.98, "total_usd": 190.0, "oldest": 28, "avg_days": 28.0}, {"doc_num": 696328641, "internal_num": 71530, "client": "HEINZ - GLAS PERU S.A.C.", "status": "sent", "lineas": 1, "total_lc": 653.98, "total_usd": 190.0, "oldest": 28, "avg_days": 28.0}, {"doc_num": 696328642, "internal_num": 71531, "client": "HEINZ - GLAS PERU S.A.C.", "status": "sent", "lineas": 1, "total_lc": 653.98, "total_usd": 190.0, "oldest": 28, "avg_days": 28.0}, {"doc_num": 696328643, "internal_num": 71533, "client": "HEINZ - GLAS PERU S.A.C.", "status": "sent", "lineas": 1, "total_lc": 653.98, "total_usd": 190.0, "oldest": 28, "avg_days": 28.0}, {"doc_num": 696328646, "internal_num": 71539, "client": "BODEGAS VIÑAS DE ORO S.A.C.", "status": "sent", "lineas": 4, "total_lc": 3274.37, "total_usd": 951.3, "oldest": 28, "avg_days": 28.0}, {"doc_num": 696328682, "internal_num": 71646, "client": "TDP CORP S.A.", "status": "sent", "lineas": 2, "total_lc": 1725.44, "total_usd": 501.0, "oldest": 27, "avg_days": 27.0}, {"doc_num": 696328755, "internal_num": 71812, "client": "CORPORACION MARA S.A.", "status": "sent", "lineas": 1, "total_lc": 17656.2, "total_usd": 5100.0, "oldest": 26, "avg_days": 26.0}, {"doc_num": 696328762, "internal_num": 71830, "client": "AURANDINA S.A.C", "status": "sent", "lineas": 4, "total_lc": 6550.95, "total_usd": 1883.54, "oldest": 25, "avg_days": 25.0}, {"doc_num": 696328770, "internal_num": 71850, "client": "DSV AIR & SEA S.A.", "status": "sent", "lineas": 1, "total_lc": 1217.3, "total_usd": 350.0, "oldest": 24, "avg_days": 24.0}, {"doc_num": 696328771, "internal_num": 71853, "client": "DSV AIR & SEA S.A.", "status": "sent", "lineas": 1, "total_lc": 1217.3, "total_usd": 350.0, "oldest": 24, "avg_days": 24.0}, {"doc_num": 696328830, "internal_num": 72007, "client": "QUISPE AMPUERO GLORIA", "status": "sent", "lineas": 1, "total_lc": 520.04, "total_usd": 148.16, "oldest": 22, "avg_days": 22.0}, {"doc_num": 696328832, "internal_num": 72011, "client": "QUISPE AMPUERO GLORIA", "status": "sent", "lineas": 2, "total_lc": 1770.05, "total_usd": 504.29, "oldest": 22, "avg_days": 22.0}, {"doc_num": 696328910, "internal_num": 72203, "client": "BRAEDT S.A.", "status": "sent", "lineas": 1, "total_lc": 1018.54, "total_usd": 289.44, "oldest": 21, "avg_days": 21.0}, {"doc_num": 696328911, "internal_num": 72205, "client": "CORPORACION SABRISA S.A.C.", "status": "sent", "lineas": 1, "total_lc": 1138.4, "total_usd": 323.5, "oldest": 21, "avg_days": 21.0}, {"doc_num": 696328946, "internal_num": 72281, "client": "PSA MARINE PERU S.A.", "status": "sent", "lineas": 4, "total_lc": 71.89, "total_usd": 20.43, "oldest": 21, "avg_days": 21.0}, {"doc_num": 696328951, "internal_num": 72293, "client": "PSA MARINE PERU S.A.", "status": "sent", "lineas": 1, "total_lc": 809.37, "total_usd": 230.0, "oldest": 21, "avg_days": 21.0}, {"doc_num": 696329006, "internal_num": 72416, "client": "JECAUD SERVIS S.A.C.", "status": "sent", "lineas": 1, "total_lc": 19354.5, "total_usd": 5500.0, "oldest": 21, "avg_days": 21.0}, {"doc_num": 696329013, "internal_num": 72433, "client": "GREY INVERSIONES S.A.C.", "status": "sent", "lineas": 1, "total_lc": 1055.7, "total_usd": 300.0, "oldest": 21, "avg_days": 21.0}, {"doc_num": 696329016, "internal_num": 72440, "client": "MOLITALIA S.A", "status": "sent", "lineas": 9, "total_lc": 187354.65, "total_usd": 53240.56, "oldest": 21, "avg_days": 21.0}, {"doc_num": 696329025, "internal_num": 72458, "client": "VALLE CONDEZO DIMAS LUIS", "status": "sent", "lineas": 2, "total_lc": 3406.43, "total_usd": 968.01, "oldest": 21, "avg_days": 21.0}, {"doc_num": 696329079, "internal_num": 72588, "client": "TAI LOY S.A.", "status": "sent", "lineas": 1, "total_lc": 4486.21, "total_usd": 1271.24, "oldest": 20, "avg_days": 20.0}, {"doc_num": 696329177, "internal_num": 72809, "client": "DHL SUPPLY CHAIN DE LIMA S.A.C.", "status": "sent", "lineas": 1, "total_lc": 2381.82, "total_usd": 676.46, "oldest": 16, "avg_days": 16.0}, {"doc_num": 696329186, "internal_num": 72830, "client": "FARMACIAS PERUANAS S.A.C.", "status": "sent", "lineas": 4, "total_lc": 4506.88, "total_usd": 1280.0, "oldest": 16, "avg_days": 16.0}, {"doc_num": 696329199, "internal_num": 72858, "client": "AURANDINA S.A.C", "status": "sent", "lineas": 2, "total_lc": 3955.7, "total_usd": 1123.46, "oldest": 16, "avg_days": 16.0}, {"doc_num": 696329246, "internal_num": 72968, "client": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "status": "sent", "lineas": 2, "total_lc": 1004.48, "total_usd": 251.2, "oldest": 16, "avg_days": 16.0}, {"doc_num": 696329249, "internal_num": 72976, "client": "SNACKS AMERICA LATINA SRL", "status": "sent", "lineas": 1, "total_lc": 500.0, "total_usd": 0.0, "oldest": 16, "avg_days": 16.0}, {"doc_num": 696329251, "internal_num": 72980, "client": "DHL SUPPLY CHAIN DE LIMA S.A.C.", "status": "sent", "lineas": 4, "total_lc": 15892.03, "total_usd": 4513.5, "oldest": 16, "avg_days": 16.0}, {"doc_num": 696329254, "internal_num": 72986, "client": "MITEC FORKLIFT SERVICE S.A.C.", "status": "sent", "lineas": 1, "total_lc": 1229.39, "total_usd": 349.06, "oldest": 15, "avg_days": 15.0}, {"doc_num": 696329330, "internal_num": 73151, "client": "VIRU S.A.", "status": "sent", "lineas": 2, "total_lc": 440.25, "total_usd": 125.0, "oldest": 15, "avg_days": 15.0}, {"doc_num": 696329342, "internal_num": 73185, "client": "PRIME EXPRESS S.A.C", "status": "sent", "lineas": 2, "total_lc": 7128.11, "total_usd": 2023.88, "oldest": 15, "avg_days": 15.0}, {"doc_num": 696329344, "internal_num": 73189, "client": "AMFA VITRUM S.A.", "status": "sent", "lineas": 1, "total_lc": 352.2, "total_usd": 100.0, "oldest": 15, "avg_days": 15.0}, {"doc_num": 696329359, "internal_num": 73241, "client": "VIRU S.A.", "status": "sent", "lineas": 4, "total_lc": 1612.58, "total_usd": 461.0, "oldest": 14, "avg_days": 14.0}, {"doc_num": 696329362, "internal_num": 73251, "client": "VIRU S.A.", "status": "sent", "lineas": 4, "total_lc": 1612.58, "total_usd": 461.0, "oldest": 14, "avg_days": 14.0}, {"doc_num": 696329370, "internal_num": 73270, "client": "VIRU S.A.", "status": "sent", "lineas": 2, "total_lc": 12592.8, "total_usd": 3600.0, "oldest": 14, "avg_days": 14.0}, {"doc_num": 696329488, "internal_num": 73550, "client": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "status": "sent", "lineas": 7, "total_lc": 5588.87, "total_usd": 1509.76, "oldest": 13, "avg_days": 13.0}, {"doc_num": 696329497, "internal_num": 73577, "client": "TIENDAS SUPERPET S.A.C.", "status": "sent", "lineas": 6, "total_lc": 1318.18, "total_usd": 379.88, "oldest": 13, "avg_days": 13.0}, {"doc_num": 696329523, "internal_num": 73638, "client": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "status": "sent", "lineas": 2, "total_lc": 3046.47, "total_usd": 828.22, "oldest": 12, "avg_days": 12.0}, {"doc_num": 696329525, "internal_num": 73643, "client": "TIENDAS SUPERPET S.A.C.", "status": "sent", "lineas": 2, "total_lc": 2031.61, "total_usd": 587.0, "oldest": 12, "avg_days": 12.0}, {"doc_num": 696329530, "internal_num": 73653, "client": "DELTA PLUS PERU S.A.C.", "status": "sent", "lineas": 12, "total_lc": 5844.4, "total_usd": 1688.64, "oldest": 12, "avg_days": 12.0}, {"doc_num": 696329546, "internal_num": 73684, "client": "SEKUR PERU SA", "status": "sent", "lineas": 6, "total_lc": 2390.61, "total_usd": 690.73, "oldest": 12, "avg_days": 12.0}, {"doc_num": 696329559, "internal_num": 73725, "client": "INTRADEVCO INDUSTRIAL S.A.", "status": "sent", "lineas": 11, "total_lc": 34008.35, "total_usd": 9826.16, "oldest": 12, "avg_days": 12.0}, {"doc_num": 696329562, "internal_num": 73730, "client": "INTRADEVCO INDUSTRIAL S.A.", "status": "sent", "lineas": 1, "total_lc": 692.2, "total_usd": 200.0, "oldest": 12, "avg_days": 12.0}, {"doc_num": 696329576, "internal_num": 73765, "client": "VSI INDUSTRIAL S.A.C.", "status": "sent", "lineas": 2, "total_lc": 892.08, "total_usd": 257.75, "oldest": 12, "avg_days": 12.0}, {"doc_num": 696329579, "internal_num": 73771, "client": "VSI INDUSTRIAL S.A.C.", "status": "sent", "lineas": 2, "total_lc": 328.8, "total_usd": 95.0, "oldest": 12, "avg_days": 12.0}, {"doc_num": 696329580, "internal_num": 73774, "client": "VSI INDUSTRIAL S.A.C.", "status": "sent", "lineas": 2, "total_lc": 328.8, "total_usd": 95.0, "oldest": 12, "avg_days": 12.0}, {"doc_num": 696329584, "internal_num": 73782, "client": "VIRU FINE FOODS S.A.", "status": "sent", "lineas": 4, "total_lc": 3586.33, "total_usd": 1036.21, "oldest": 12, "avg_days": 12.0}, {"doc_num": 696329724, "internal_num": 74070, "client": "HIPERMERCADOS TOTTUS S.A.", "status": "sent", "lineas": 10, "total_lc": 20005.63, "total_usd": 5697.02, "oldest": 9, "avg_days": 9.0}, {"doc_num": 696329726, "internal_num": 74075, "client": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "status": "sent", "lineas": 1, "total_lc": 13575.13, "total_usd": 3934.82, "oldest": 9, "avg_days": 9.0}, {"doc_num": 696329762, "internal_num": 74155, "client": "AGRILOR S.A.C.", "status": "sent", "lineas": 2, "total_lc": 1198.53, "total_usd": 347.4, "oldest": 9, "avg_days": 9.0}, {"doc_num": 696329770, "internal_num": 74174, "client": "COMPAÑÍA FRIGORIFICA DEL SUR S.A.C.", "status": "sent", "lineas": 2, "total_lc": 1518.0, "total_usd": 440.0, "oldest": 9, "avg_days": 9.0}, {"doc_num": 696329850, "internal_num": 74362, "client": "MEXICHEM PERU S.A.", "status": "sent", "lineas": 3, "total_lc": 11818.88, "total_usd": 3435.72, "oldest": 8, "avg_days": 8.0}, {"doc_num": 696329857, "internal_num": 74376, "client": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "status": "sent", "lineas": 2, "total_lc": 9694.86, "total_usd": 2638.04, "oldest": 8, "avg_days": 8.0}, {"doc_num": 696330014, "internal_num": 74774, "client": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "status": "sent", "lineas": 1, "total_lc": 1200.0, "total_usd": 0.0, "oldest": 6, "avg_days": 6.0}, {"doc_num": 696330018, "internal_num": 74782, "client": "DISTRIBUCIONES DIESEL PERU S.A.C.", "status": "sent", "lineas": 1, "total_lc": 19528.2, "total_usd": 5700.0, "oldest": 6, "avg_days": 6.0}, {"doc_num": 696330028, "internal_num": 74811, "client": "ALICORP S.A.A.", "status": "sent", "lineas": 2, "total_lc": 2017.91, "total_usd": 589.0, "oldest": 6, "avg_days": 6.0}, {"doc_num": 696330032, "internal_num": 74820, "client": "ALICORP S.A.A.", "status": "sent", "lineas": 1, "total_lc": 1199.1, "total_usd": 350.0, "oldest": 6, "avg_days": 6.0}, {"doc_num": 696330056, "internal_num": 74878, "client": "TIENDAS POR DEPARTAMENTO RIPLEY S.A.", "status": "sent", "lineas": 3, "total_lc": 7706.21, "total_usd": 2249.33, "oldest": 6, "avg_days": 6.0}, {"doc_num": 696330058, "internal_num": 74882, "client": "TIENDAS POR DEPARTAMENTO RIPLEY S.A.", "status": "sent", "lineas": 1, "total_lc": 2859.68, "total_usd": 834.7, "oldest": 6, "avg_days": 6.0}, {"doc_num": 696330070, "internal_num": 74904, "client": "UNION DE CERVECERIAS PERUANAS BACKUS Y JOHNSTON S.A.A", "status": "sent", "lineas": 1, "total_lc": 1199.1, "total_usd": 350.0, "oldest": 6, "avg_days": 6.0}, {"doc_num": 696330071, "internal_num": 74905, "client": "BAKELS PERU S.A.C.", "status": "sent", "lineas": 1, "total_lc": 10209.48, "total_usd": 2980.0, "oldest": 6, "avg_days": 6.0}, {"doc_num": 696330074, "internal_num": 74912, "client": "LABORATORIO HOFARM S.A.C.", "status": "sent", "lineas": 3, "total_lc": 2138.62, "total_usd": 625.51, "oldest": 5, "avg_days": 5.0}, {"doc_num": 696330118, "internal_num": 75016, "client": "ALICORP S.A.A.", "status": "sent", "lineas": 1, "total_lc": 577.67, "total_usd": 168.96, "oldest": 5, "avg_days": 5.0}, {"doc_num": 696330201, "internal_num": 75219, "client": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "status": "sent", "lineas": 2, "total_lc": 9681.67, "total_usd": 2638.04, "oldest": 2, "avg_days": 2.0}, {"doc_num": 696330270, "internal_num": 75372, "client": "TEXTILES CAMONES S.A. BIC", "status": "sent", "lineas": 3, "total_lc": 7711.57, "total_usd": 2245.0, "oldest": 2, "avg_days": 2.0}, {"doc_num": 696330310, "internal_num": 75481, "client": "AGROINDUSTRIAS OLEAGINOSAS DEL PERU S.A.", "status": "sent", "lineas": 7, "total_lc": 3549.95, "total_usd": 1032.26, "oldest": 1, "avg_days": 1.0}, {"doc_num": 696330361, "internal_num": 75592, "client": "AGROINDUSTRIAS OLEAGINOSAS DEL PERU S.A.", "status": "sent", "lineas": 2, "total_lc": 2132.18, "total_usd": 620.0, "oldest": 1, "avg_days": 1.0}]},
+  YSTAY:{total:29,pending:12,sent:17,confirmed:0,total_lc:356499.14,total_usd:103724.59,max_days:62,accounts:[{"doc_num": 696324131, "internal_num": 61110, "client": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "status": "pending", "lineas": 11, "total_lc": 18310.3, "total_usd": 5252.53, "oldest": 51, "avg_days": 51.0}, {"doc_num": 696328372, "internal_num": 70902, "client": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "status": "pending", "lineas": 3, "total_lc": 3654.34, "total_usd": 1061.69, "oldest": 30, "avg_days": 30.0}, {"doc_num": 696329257, "internal_num": 72999, "client": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "status": "pending", "lineas": 2, "total_lc": 5307.76, "total_usd": 1507.03, "oldest": 15, "avg_days": 15.0}, {"doc_num": 696329866, "internal_num": 74403, "client": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "status": "pending", "lineas": 4, "total_lc": 3417.25, "total_usd": 995.12, "oldest": 7, "avg_days": 7.0}, {"doc_num": 696329890, "internal_num": 74472, "client": "AVOCADO PACKING COMPANY S.A.C.", "status": "pending", "lineas": 1, "total_lc": 60.1, "total_usd": 17.5, "oldest": 7, "avg_days": 7.0}, {"doc_num": 696329942, "internal_num": 74587, "client": "SAGA FALABELLA S A", "status": "pending", "lineas": 1, "total_lc": 4365.44, "total_usd": 1271.24, "oldest": 7, "avg_days": 7.0}, {"doc_num": 696330027, "internal_num": 74807, "client": "SAGA FALABELLA S A", "status": "pending", "lineas": 1, "total_lc": 3363.2, "total_usd": 981.67, "oldest": 6, "avg_days": 6.0}, {"doc_num": 696330031, "internal_num": 74818, "client": "SAGA FALABELLA S A", "status": "pending", "lineas": 1, "total_lc": 16275.66, "total_usd": 4750.63, "oldest": 6, "avg_days": 6.0}, {"doc_num": 696330138, "internal_num": 75071, "client": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "status": "pending", "lineas": 6, "total_lc": 14354.94, "total_usd": 4198.58, "oldest": 5, "avg_days": 5.0}, {"doc_num": 696330295, "internal_num": 75439, "client": "SAGA FALABELLA S A", "status": "pending", "lineas": 6, "total_lc": 7864.58, "total_usd": 2286.88, "oldest": 1, "avg_days": 1.0}, {"doc_num": 696330309, "internal_num": 75479, "client": "SAGA FALABELLA S A", "status": "pending", "lineas": 1, "total_lc": 56787.66, "total_usd": 16512.84, "oldest": 1, "avg_days": 1.0}, {"doc_num": 696330369, "internal_num": 75614, "client": "SAGA FALABELLA S A", "status": "pending", "lineas": 3, "total_lc": 3392.92, "total_usd": 988.9, "oldest": 0, "avg_days": 0.0}, {"doc_num": 696326550, "internal_num": 66780, "client": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "status": "sent", "lineas": 7, "total_lc": 2987.87, "total_usd": 869.81, "oldest": 62, "avg_days": 62.0}, {"doc_num": 696327291, "internal_num": 68500, "client": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "status": "sent", "lineas": 4, "total_lc": 2278.53, "total_usd": 651.94, "oldest": 49, "avg_days": 49.0}, {"doc_num": 696327965, "internal_num": 70014, "client": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "status": "sent", "lineas": 7, "total_lc": 4648.95, "total_usd": 1375.84, "oldest": 36, "avg_days": 36.0}, {"doc_num": 696328004, "internal_num": 70105, "client": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "status": "sent", "lineas": 3, "total_lc": 2500.05, "total_usd": 739.88, "oldest": 36, "avg_days": 36.0}, {"doc_num": 696328368, "internal_num": 70892, "client": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "status": "sent", "lineas": 4, "total_lc": 17228.39, "total_usd": 5005.34, "oldest": 30, "avg_days": 30.0}, {"doc_num": 696328433, "internal_num": 71027, "client": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "status": "sent", "lineas": 14, "total_lc": 8745.83, "total_usd": 2540.92, "oldest": 30, "avg_days": 30.0}, {"doc_num": 696328509, "internal_num": 71212, "client": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "status": "sent", "lineas": 3, "total_lc": 7877.25, "total_usd": 2287.24, "oldest": 29, "avg_days": 29.0}, {"doc_num": 696329449, "internal_num": 73457, "client": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "status": "sent", "lineas": 1, "total_lc": 4329.0, "total_usd": 1247.55, "oldest": 13, "avg_days": 13.0}, {"doc_num": 696329581, "internal_num": 73775, "client": "HIPERMERCADOS TOTTUS S.A.", "status": "sent", "lineas": 3, "total_lc": 12419.46, "total_usd": 3588.4, "oldest": 12, "avg_days": 12.0}, {"doc_num": 696329670, "internal_num": 73948, "client": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "status": "sent", "lineas": 9, "total_lc": 7481.15, "total_usd": 2168.45, "oldest": 9, "avg_days": 9.0}, {"doc_num": 696329703, "internal_num": 74023, "client": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "status": "sent", "lineas": 5, "total_lc": 6864.5, "total_usd": 1989.71, "oldest": 9, "avg_days": 9.0}, {"doc_num": 696328505, "internal_num": 71203, "client": "HIPERMERCADOS TOTTUS S.A.", "status": "sent", "lineas": 10, "total_lc": 74894.2, "total_usd": 21905.29, "oldest": 5, "avg_days": 5.0}, {"doc_num": 696330209, "internal_num": 75234, "client": "SAGA FALABELLA S A", "status": "sent", "lineas": 12, "total_lc": 7252.39, "total_usd": 2111.32, "oldest": 2, "avg_days": 2.0}, {"doc_num": 696330229, "internal_num": 75282, "client": "SAGA FALABELLA S A", "status": "sent", "lineas": 11, "total_lc": 6708.45, "total_usd": 1952.97, "oldest": 2, "avg_days": 2.0}, {"doc_num": 696330243, "internal_num": 75314, "client": "SAGA FALABELLA S A", "status": "sent", "lineas": 2, "total_lc": 1605.21, "total_usd": 467.31, "oldest": 2, "avg_days": 2.0}, {"doc_num": 696330246, "internal_num": 75323, "client": "TIENDAS DEL MEJORAMIENTO DEL HOGAR S.A.", "status": "sent", "lineas": 10, "total_lc": 46709.16, "total_usd": 13598.01, "oldest": 2, "avg_days": 2.0}, {"doc_num": 696330316, "internal_num": 75496, "client": "ALICORP S.A.A.", "status": "sent", "lineas": 1, "total_lc": 4814.6, "total_usd": 1400.0, "oldest": 1, "avg_days": 1.0}]},
+};
+
+const META=160,MSEM=40;
+const SEMS=[
+  {id:'S1',label:'Sem 1',rango:'4–10 may', color:'var(--jnavy2)',activa:true, parcial:false},
+  {id:'S2',label:'Sem 2',rango:'11–17 may',color:'var(--jamber)', activa:true, parcial:true},
+  {id:'S3',label:'Sem 3',rango:'18–24 may',color:'var(--border)',  activa:false},
+  {id:'S4',label:'Sem 4',rango:'25–31 may',color:'var(--border)',  activa:false},
+];
+// Encargado colors — navy/teal family, sobrio
+const EC={
+  MEDINA:  {color:'#073E58',light:'#5EB8D8'},
+  YSTAY:   {color:'#0D5C7A',light:'#5EB8D8'},
+  MONTALVO:{color:'#2A6B3C',light:'#6ABF82'},
+  RIVAS:   {color:'#7A4800',light:'#DBA030'},
+  SARAVIA: {color:'#5A0F2E',light:'#C07090'},
+};
+function ecColor(enc){ return (EC[enc]||{color:'#4A4A4A'}).color; }
+function ecLight(enc){ return (EC[enc]||{light:'#9A9A9A'}).light; }
+
+const ALL=Object.entries(ENC).flatMap(([enc,d])=>d.tecnicos.map(t=>({...t,enc})));
+let fCargo='all',fEncOv=null,fPE='Todos',fCE='Todos',fCSt='all';
+let pvAll=[],pvFiltered=[],pvQuery='',pvSortCol='total_lc',pvSortDir=-1;
+let ctAll=[],ctFiltered=[],ctQuery='',ctSortCol='status',ctSortDir=1;
+let CH={};
+
+const cap=s=>s.toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
+const ini=s=>s.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+const pp=h=>+(h/META*100).toFixed(1);
+function bc(p){return p>=85?'#6ABF82':p>=60?'#F7A515':'#D94040';}
+const spill=p=>p>=85?'<span class="pill p-ok">Cumple</span>':p>=60?'<span class="pill p-warn">Alerta</span>':'<span class="pill p-bad">Crítico</span>';
+function agC(d){return d>130?'#D94040':d>90?'#C87020':d>60?'#F7A515':d>30?'#8AAF40':'#6ABF82';}
+function agPill(d){
+  if(d>130) return '<span class="pill p-bad">+130d</span>';
+  if(d>90)  return '<span class="pill" style="background:rgba(200,100,0,.18);color:#C87020">91–130d</span>';
+  if(d>60)  return '<span class="pill p-warn">61–90d</span>';
+  if(d>30)  return '<span class="pill" style="background:rgba(138,175,64,.18);color:#8AAF40">31–60d</span>';
+  return '<span class="pill p-ok">≤30d</span>';
+}
+const fmtLC=v=>v>0?'S/.'+v.toLocaleString('es-PE',{minimumFractionDigits:2,maximumFractionDigits:2}):'—';
+const fmtUSD=v=>v>0?'$'+v.toLocaleString('es-PE',{minimumFractionDigits:2,maximumFractionDigits:2}):'—';
+const fmtLCk=v=>v>=1000?'S/.'+Math.round(v/1000)+'k':'S/.'+Math.round(v);
+function destC(id){if(CH[id]){CH[id].destroy();delete CH[id];}}
+
+// ── NAV ──
+function showSec(id,btn){
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='provisiones') initProv();
+  if(id==='cotizaciones') initCot();
+  if(id==='encargados') renderEncSel();
+}
+
+// ── MODAL ──
+function closeMo(id,e){if(e&&e.target!==document.getElementById(id))return;document.getElementById(id).classList.add('hidden');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.mo').forEach(m=>m.classList.add('hidden'));});
+
+function openSemModal(semId,allT){
+  const sem=SEMS.find(s=>s.id===semId);if(!sem)return;
+  document.getElementById('moSem-t').textContent=sem.label+' — '+sem.rango;
+  document.getElementById('moSem-s').textContent=sem.activa?(sem.parcial?'Semana parcial':'Semana completa'):'Semana futura';
+  const data=[...allT].sort((a,b)=>(b.s[semId]||0)-(a.s[semId]||0));
+  const totH=data.reduce((s,r)=>s+(r.s[semId]||0),0);
+  const cumple=data.filter(r=>(r.s[semId]||0)>=MSEM).length;
+  const al=data.filter(r=>{const h=r.s[semId]||0;return h>=20&&h<MSEM;}).length;
+  const crit=data.filter(r=>(r.s[semId]||0)<20).length;
+  document.getElementById('moSem-k').innerHTML=[
+    {l:'H. equipo',v:totH.toFixed(1)+' h',c:'var(--jnavy2)'},
+    {l:'Con horas', v:data.filter(r=>r.s[semId]>0).length,c:'var(--text2)'},
+    {l:'≥ 40h',     v:cumple,c:'#6ABF82'},
+    {l:'Alertas',   v:al+crit,c:'#D94040'},
+  ].map(k=>`<div class="mo-kpi" style="border-top-color:${k.c}"><div class="mo-kv" style="color:${k.c}">${k.v}</div><div class="mo-kl">${k.l}</div></div>`).join('');
+  let rows='<thead><tr><th>Técnico</th><th>Encargado</th><th>Cargo</th><th>Horas '+sem.label+'</th><th>Estado mes</th></tr></thead><tbody>';
+  if(!sem.activa) rows+='<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:22px">Semana futura</td></tr>';
+  else data.forEach(r=>{
+    const h=r.s[semId]||0;
+    const col=ecColor(r.enc),light=ecLight(r.enc);
+    const vp=sem.parcial?`<span class="pill p-part">${h.toFixed(1)} h</span>`:h>=MSEM?`<span class="pill p-ok">${h.toFixed(1)} h</span>`:h>=20?`<span class="pill p-warn">${h.toFixed(1)} h</span>`:`<span class="pill p-bad">${h>0?h.toFixed(1)+' h':'0 h'}</span>`;
+    rows+=`<tr class="clickable" data-tec="${r.t}"><td><div class="nc"><div class="av" style="background:${col};color:${light}">${ini(r.t)}</div>${r.t}</div></td><td><span class="pill" style="background:${col}40;color:${light}">${cap(r.enc)}</span></td><td>${r.cargo==='Inhouse'?'<span class="pill p-info">Inhouse</span>':'<span class="pill p-mob">Mobile</span>'}</td><td>${vp}</td><td>${spill(pp(r.h))}</td></tr>`;
+  });
+  rows+='</tbody>';
+  document.getElementById('moSem-tbl').innerHTML=rows;
+  document.querySelectorAll('#moSem-tbl tr.clickable').forEach(tr=>{
+    const r=allT.find(x=>x.t===tr.dataset.tec);
+    if(r) tr.onclick=()=>openTecModal(r);
+  });
+  document.getElementById('moSem').classList.remove('hidden');
+}
+
+function openTecModal(r){
+  if(!r)return;
+  const p=pp(r.h),bcolor=bc(p),falt=Math.max(0,META-r.h);
+  const col=ecColor(r.enc),light=ecLight(r.enc);
+  document.getElementById('moTec-t').textContent=r.t;
+  document.getElementById('moTec-s').textContent=(r.cargo||'')+' · '+cap(r.enc||'')+(r.team?' · Team '+r.team:'')+(r.sede?' · '+cap(r.sede):'');
+  document.getElementById('moTec-body').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <div style="background:var(--bg3);border-radius:4px;padding:12px 14px;border-left:3px solid ${bcolor}">
+        <div style="font-size:9px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;margin-bottom:6px">Horas ejecutadas</div>
+        <div style="font-size:22px;font-weight:300;color:${bcolor}">${r.h.toFixed(1)} h</div>
+        <div class="prog-track"><div class="prog-fill" style="width:${Math.min(100,p)}%;background:${bcolor}"></div></div>
+        <div style="font-size:11px;color:var(--text2);margin-top:4px">${p}% de 160h</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:4px;padding:12px 14px;border-left:3px solid ${falt>0?'#D94040':'#6ABF82'}">
+        <div style="font-size:9px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;margin-bottom:6px">Horas faltantes</div>
+        <div style="font-size:22px;font-weight:300;color:${falt>0?'#D94040':'#6ABF82'}">${falt>0?'+'+falt.toFixed(1)+' h':'✓ Meta'}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:10px">${falt>0?'Para llegar a 160h':'Objetivo alcanzado'}</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ch"><span class="ct">Horas por semana</span></div>
+      <table style="width:100%;border-collapse:collapse"><thead><tr>
+        ${['Semana','Período','Horas'].map(h=>`<th style="padding:7px 10px;font-size:9px;font-family:var(--mono);color:var(--text3);text-align:left;text-transform:uppercase;border-bottom:1px solid var(--border)">${h}</th>`).join('')}
+      </tr></thead><tbody>
+        ${SEMS.map(sem=>{
+          const h=r.s[sem.id]||0;
+          let vp=sem.activa?(sem.parcial?`<span class="pill p-part">${h.toFixed(1)} h</span>`:h>=MSEM?`<span class="pill p-ok">${h.toFixed(1)} h</span>`:h>=20?`<span class="pill p-warn">${h.toFixed(1)} h</span>`:`<span class="pill p-bad">${h>0?h.toFixed(1)+' h':'0 h'}</span>`):'<span style="color:var(--text3)">—</span>';
+          return `<tr><td style="padding:7px 10px;color:var(--text2);font-family:var(--mono)">${sem.label}</td><td style="padding:7px 10px;font-size:10px;color:var(--text3)">${sem.rango}</td><td style="padding:7px 10px">${vp}</td></tr>`;
+        }).join('')}
+      </tbody></table>
+    </div>`;
+  document.getElementById('moSem').classList.add('hidden');
+  document.getElementById('moTec').classList.remove('hidden');
+}
+
+// ── OVERVIEW ──
+function setFBtnActive(btn, color){ btn.style.cssText=`background:${color};color:#fff;border-color:${color}`; }
+function setCargo(f,btn){
+  fCargo=f;
+  ['fb-all','fb-ih','fb-mb'].forEach(id=>document.getElementById(id).style.cssText='');
+  setFBtnActive(btn,'var(--jnavy)');
+  renderOv();
+}
+function setEncOv(enc,btn){
+  fEncOv=fEncOv===enc?null:enc;
+  document.querySelectorAll('[id^="fe-"]').forEach(b=>b.style.cssText='');
+  if(fEncOv) setFBtnActive(btn, ecColor(enc));
+  renderOv();
+}
+
+function renderOv(){
+  let data=ALL;
+  if(fCargo!=='all') data=data.filter(r=>r.cargo===fCargo);
+  if(fEncOv) data=data.filter(r=>r.enc===fEncOv);
+  const total=data.length,ih=data.filter(d=>d.cargo==='Inhouse').length,mb=data.filter(d=>d.cargo==='Mobile').length;
+  const encs=new Set(data.map(d=>d.enc)).size;
+  const totH=data.reduce((s,r)=>s+r.h,0);
+  const avgP=total?data.reduce((s,r)=>s+pp(r.h),0)/total:0;
+
+  document.getElementById('ov-metrics').innerHTML=[
+    {tag:'Total técnicos',num:total,sub:'en nómina',c:'var(--jnavy)',icon:'👥'},
+    {tag:'Inhouse',num:ih,sub:total?Math.round(ih/total*100)+'%':'—',c:'var(--jnavy2)',icon:'🏢'},
+    {tag:'Mobile',num:mb,sub:total?Math.round(mb/total*100)+'%':'—',c:'var(--jamber-dim)',icon:'📱'},
+    {tag:'Horas ejecutadas',num:totH.toFixed(0)+'h',sub:'Mayo 2026',c:'var(--jgreen)',icon:'⏱'},
+    {tag:'Cumpl. promedio',num:avgP.toFixed(1)+'%',sub:'meta 160h/mes',c:bc(avgP),icon:'📊'},
+  ].map(m=>`<div class="mc" style="--c:${m.c}"><div class="mc-tag">${m.tag}</div><div class="mc-num">${m.num}</div><div class="mc-sub">${m.sub}</div><div class="mc-icon">${m.icon}</div></div>`).join('');
+
+  const byE={};data.forEach(d=>{byE[d.enc]=(byE[d.enc]||0)+1;});
+  const maxE=Math.max(...Object.values(byE),1);
+  document.getElementById('ov-enc-b').textContent=encs+' encargado'+(encs!==1?'s':'');
+  document.getElementById('ov-enc-bars').innerHTML=Object.entries(byE).sort((a,b)=>b[1]-a[1]).map(([e,c])=>`
+    <div class="br"><div class="bn">${cap(e)}</div>
+    <div class="bt"><div class="bf" style="width:${Math.round(c/maxE*100)}%;background:${ecColor(e)}">${c}</div></div>
+    <div style="font-size:11px;color:var(--text3);font-family:var(--mono);width:20px;text-align:right;flex-shrink:0">${c}</div></div>`).join('');
+
+  destC('ov-donut');
+  document.getElementById('ov-dn').textContent=total;
+  CH['ov-donut']=new Chart(document.getElementById('ov-donut'),{
+    type:'doughnut',
+    data:{labels:['Inhouse','Mobile'],datasets:[{data:[ih,mb],backgroundColor:['#073E58','#7A4800'],borderWidth:0,hoverOffset:3}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'70%',plugins:{legend:{display:false}}}
+  });
+  document.getElementById('ov-leg').innerHTML=[{l:'Inhouse',v:ih,c:'#073E58'},{l:'Mobile',v:mb,c:'#7A4800'}]
+    .map(x=>`<span class="li"><span class="lsq" style="background:${x.c}"></span>${x.l} — <b>${x.v}</b></span>`).join('');
+
+  // Prov bars stacked
+  const pvEncs=Object.entries(PROV).sort((a,b)=>b[1].total_lc-a[1].total_lc);
+  const AGING_RANGES=[
+    {min:0,  max:30,  color:'#2E6B42'},{min:31,max:60,  color:'#6A8030'},
+    {min:61, max:90,  color:'#B07A10'},{min:91,max:130, color:'#9A4800'},
+    {min:131,max:9999,color:'#8A000A'},
+  ];
+  function agRangeColor(d){for(const r of AGING_RANGES)if(d>=r.min&&d<=r.max)return r.color;return '#8A000A';}
+  if(!document.getElementById('prov-tt')){
+    const el=document.createElement('div');
+    el.id='prov-tt';
+    el.style.cssText='position:fixed;background:var(--bg2);border:1px solid var(--border2);border-radius:4px;padding:10px 13px;font-size:11px;color:var(--text);pointer-events:none;z-index:9999;display:none;max-width:240px;box-shadow:0 4px 16px rgba(0,0,0,.4)';
+    document.body.appendChild(el);
+  }
+  const tt2=document.getElementById('prov-tt');
+  document.addEventListener('mousemove',e=>{if(tt2.style.display!=='none'){tt2.style.left=Math.min(e.clientX+14,window.innerWidth-260)+'px';tt2.style.top=(e.clientY-10)+'px';}});
+
+  const legHTML='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">'+
+    [{l:'≤30d',c:'#2E6B42'},{l:'31–60d',c:'#6A8030'},{l:'61–90d',c:'#B07A10'},{l:'91–130d',c:'#9A4800'},{l:'+130d',c:'#8A000A'}]
+    .map(r=>`<span style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--text3);font-family:var(--mono)"><span style="width:9px;height:9px;border-radius:2px;display:inline-block;background:${r.c}"></span>${r.l}</span>`).join('')+
+  '</div>';
+
+  let pvHTML=legHTML;
+  pvEncs.forEach(([enc,p])=>{
+    const total=p.total_lc||1;
+    pvHTML+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <div style="font-size:11px;color:var(--text2);width:66px;text-align:right;flex-shrink:0;font-family:var(--mono)">${cap(enc)}</div>
+      <div class="prov-stacked-bar" style="flex:1;height:20px;border-radius:2px;overflow:hidden;display:flex;background:var(--bg4);cursor:crosshair">`;
+    p.accounts.forEach((seg,si)=>{
+      const pct=(seg.total_lc/total*100).toFixed(2);
+      const col=agRangeColor(seg.oldest);
+      pvHTML+=`<div class="prov-seg" data-enc="${enc}" data-si="${si}" style="height:100%;width:${pct}%;background:${col};min-width:${seg.total_lc>300?'2':'1'}px;flex-shrink:0"></div>`;
+    });
+    pvHTML+=`</div>
+      <div style="font-size:11px;font-family:var(--mono);color:var(--jamber);width:52px;text-align:right;flex-shrink:0">${fmtLCk(total)}</div>
+      <div style="font-size:10px;font-family:var(--mono);font-weight:600;color:${agRangeColor(p.max_days)};width:34px;text-align:right;flex-shrink:0">${p.max_days}d</div>
+    </div>`;
+  });
+  document.getElementById('ov-prov').innerHTML=pvHTML;
+  document.querySelectorAll('.prov-seg').forEach(el=>{
+    const enc=el.dataset.enc; const si=parseInt(el.dataset.si);
+    const seg=PROV[enc]?.accounts[si];
+    if(!seg)return;
+    el.addEventListener('mouseenter',e=>{
+      tt2.style.display='block';
+      tt2.innerHTML=`<div style="font-weight:500;margin-bottom:5px">${seg.account}</div>
+        <div style="display:flex;justify-content:space-between;gap:12px;padding:2px 0"><span style="color:var(--text2)">Encargado</span><span style="font-family:var(--mono);color:${ecLight(enc)}">${cap(enc)}</span></div>
+        <div style="display:flex;justify-content:space-between;gap:12px;padding:2px 0"><span style="color:var(--text2)">Días abierto</span><span style="font-family:var(--mono);font-weight:600;color:${agRangeColor(seg.oldest)}">${seg.oldest}d</span></div>
+        <div style="display:flex;justify-content:space-between;gap:12px;padding:2px 0"><span style="color:var(--text2)">S/. LC</span><span style="font-family:var(--mono);color:var(--jamber)">${fmtLC(seg.total_lc)}</span></div>
+        <div style="display:flex;justify-content:space-between;gap:12px;padding:2px 0"><span style="color:var(--text2)">Delivery</span><span style="font-family:var(--mono);color:var(--text3)">${seg.delivery||'—'}</span></div>`;
+    });
+    el.addEventListener('mouseleave',()=>{tt2.style.display='none';});
+  });
+
+  // Cot bars
+  const ctEncs=Object.entries(COT).sort((a,b)=>b[1].pending-a[1].pending);
+  const maxCT=Math.max(...ctEncs.map(([,c])=>c.total),1);
+  document.getElementById('ov-cot').innerHTML=ctEncs.map(([enc,c])=>`
+    <div class="br"><div class="bn">${cap(enc)}</div>
+    <div class="bt" style="display:flex;overflow:hidden;border-radius:2px">
+      ${c.pending>0?`<div style="height:20px;background:#8A000A;width:${Math.round(c.pending/maxCT*100)}%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#fff;flex-shrink:0;font-family:var(--mono)">${c.pending}</div>`:''}
+      ${c.sent>0?`<div style="height:20px;background:#B07A10;width:${Math.round(c.sent/maxCT*100)}%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#fff;flex-shrink:0;font-family:var(--mono)">${c.sent}</div>`:''}
+      ${c.confirmed>0?`<div style="height:20px;background:#2E6B42;width:${Math.round(c.confirmed/maxCT*100)}%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#fff;flex-shrink:0;font-family:var(--mono)">${c.confirmed}</div>`:''}
+    </div>
+    <div style="font-size:10px;color:var(--text3);font-family:var(--mono);width:30px;text-align:right;flex-shrink:0">${c.total}</div></div>`).join('');
+
+  renderOvHours();
+}
+
+// ── HORAS RESUMEN OV ──
+function renderOvHours(){
+  const el=document.getElementById('ov-hours-enc');if(!el)return;
+  const ORDER=['SARAVIA','RIVAS','YSTAY','MEDINA','MONTALVO'];
+  let h='<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px">';
+  ORDER.forEach(enc=>{
+    const tecs=ENC[enc]?ENC[enc].tecnicos:[];
+    const col=ecColor(enc),light=ecLight(enc);
+    const n=tecs.length;if(!n){h+=`<div></div>`;return;}
+    const totalH=tecs.reduce((s,t)=>s+t.h,0);
+    const avgH=totalH/n,avgPct=avgH/META*100;
+    const sinMeta=tecs.filter(t=>t.h<META),conMeta=tecs.filter(t=>t.h>=META);
+    const faltTotal=sinMeta.reduce((s,t)=>s+Math.max(0,META-t.h),0);
+    const bcolor=bc(avgPct);
+    const sorted=[...sinMeta].sort((a,b)=>a.h-b.h);
+    h+=`<div style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;overflow:hidden;border-left:3px solid ${col}">
+      <div style="padding:10px 12px 8px">
+        <div style="font-size:12px;font-weight:500;color:${light};margin-bottom:2px">${cap(enc)}</div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px">
+          <span style="font-size:11px;color:var(--text2)">${n} técnicos</span>
+          <span style="font-size:15px;font-weight:500;color:${bcolor};font-family:var(--mono)">${avgPct.toFixed(0)}%</span>
+        </div>
+        <div class="prog-track" style="margin-bottom:6px"><div class="prog-fill" style="width:${Math.min(100,avgPct).toFixed(1)}%;background:${bcolor}"></div></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+          <div><div style="font-size:17px;font-weight:300;color:var(--text);font-family:var(--mono)">${avgH.toFixed(0)}h</div><div style="font-size:9px;color:var(--text3);font-family:var(--mono)">prom./técnico</div></div>
+          <div style="text-align:right"><div style="font-size:17px;font-weight:300;color:#D94040;font-family:var(--mono)">${sinMeta.length}</div><div style="font-size:9px;color:var(--text3);font-family:var(--mono)">sin meta</div></div>
+          <div style="text-align:right"><div style="font-size:17px;font-weight:300;color:#6ABF82;font-family:var(--mono)">${conMeta.length}</div><div style="font-size:9px;color:var(--text3);font-family:var(--mono)">con meta</div></div>
+        </div>
+        <div style="font-size:9px;color:var(--text3);font-family:var(--mono);border-top:1px solid var(--border);padding-top:6px;margin-bottom:4px">HORAS FALTANTES AL GRUPO</div>
+        <div style="font-size:15px;font-weight:400;color:#D94040;font-family:var(--mono)">${faltTotal.toFixed(0)} h</div>
+      </div>
+      ${sinMeta.length>0?`<div style="border-top:1px solid var(--border);padding:6px 12px 8px">
+        <div style="font-size:9px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Sin completar</div>
+        ${sorted.map(t=>{
+          const p=t.h/META*100,falt=META-t.h,tc=bc(p);
+          const sn=t.t.split(' ').slice(0,2).map((w,i)=>i===0?w:w[0]+'.').join(' ');
+          return `<div style="display:flex;align-items:center;gap:5px;margin-bottom:4px">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:10px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${sn}</div>
+              <div style="width:100%;height:2px;background:var(--bg4);border-radius:1px;margin-top:3px;overflow:hidden"><div style="height:100%;width:${Math.min(100,p).toFixed(1)}%;background:${tc}"></div></div>
+            </div>
+            <div style="font-size:10px;font-family:var(--mono);color:${tc};flex-shrink:0">${t.h.toFixed(0)}h</div>
+            <div style="font-size:9px;font-family:var(--mono);color:#D94040;flex-shrink:0;width:30px;text-align:right">-${falt.toFixed(0)}h</div>
+          </div>`;
+        }).join('')}
+      </div>`:''}
+    </div>`;
+  });
+  h+='</div>';
+  el.innerHTML=h;
+}
+
+// ── HORAS TEC ──
+function renderEncSel(){
+  document.getElementById('enc-sel').innerHTML=Object.entries(ENC).map(([enc,d])=>{
+    const tecs=d.tecnicos,col=ecColor(enc),light=ecLight(enc);
+    const totH=tecs.reduce((s,r)=>s+r.h,0);
+    const avgP=tecs.length?tecs.reduce((s,r)=>s+pp(r.h),0)/tecs.length:0;
+    return `<div class="enc-sel-card" style="border-left-color:${col}" onclick="selectEnc('${enc}')" id="esel-${enc}">
+      <div style="width:30px;height:30px;border-radius:3px;background:${col};color:${light};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;margin-bottom:8px">${enc.slice(0,2)}</div>
+      <div style="font-size:12px;font-weight:500;color:${light};margin-bottom:2px">${cap(enc)}</div>
+      <div style="font-size:11px;color:var(--text2);margin-bottom:8px">${tecs.length} técnicos</div>
+      <div style="font-size:16px;font-weight:300;color:var(--text);font-family:var(--mono)">${totH.toFixed(0)} h</div>
+      <div style="font-size:9px;font-family:var(--mono);color:var(--text3);margin-bottom:4px">horas mayo</div>
+      <div style="font-size:11px;font-weight:500;color:${bc(avgP)};font-family:var(--mono)">${avgP.toFixed(1)}%</div>
+    </div>`;
+  }).join('');
+}
+
+function selectEnc(enc){
+  document.querySelectorAll('[id^="esel-"]').forEach(el=>{
+    el.style.borderColor=el.id.replace('esel-','')===enc?ecColor(enc):'transparent';
+    el.style.background=el.id.replace('esel-','')===enc?'var(--bg3)':'var(--bg2)';
+  });
+  const d=ENC[enc];if(!d)return;
+  const col=ecColor(enc),light=ecLight(enc);
+  const tecs=[...d.tecnicos].sort((a,b)=>b.h-a.h);
+  const totH=tecs.reduce((s,r)=>s+r.h,0);
+  const avgP=tecs.length?tecs.reduce((s,r)=>s+pp(r.h),0)/tecs.length:0;
+  const alertas=tecs.filter(r=>r.s.S1<MSEM);
+  const allT=tecs.map(t=>({...t,enc,color:col}));
+  const el=document.getElementById('enc-detail');
+  el.innerHTML=`
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--bg3);border:1px solid ${col}40;border-radius:4px;margin-bottom:10px;border-left:3px solid ${col}">
+      <div style="width:36px;height:36px;border-radius:3px;background:${col};color:${light};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0">${enc.slice(0,2)}</div>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:500;color:${light}">${cap(enc)}</div>
+        <div style="font-size:11px;color:var(--text2)">${tecs.length} técnicos · ${tecs.filter(r=>r.cargo==='Inhouse').length} Inhouse · ${tecs.filter(r=>r.cargo==='Mobile').length} Mobile</div>
+      </div>
+      <div style="display:flex;gap:20px;flex-shrink:0">
+        <div style="text-align:right"><div style="font-size:16px;font-weight:400;color:${light};font-family:var(--mono)">${totH.toFixed(1)} h</div><div style="font-size:9px;opacity:.6;font-family:var(--mono);color:${light};text-transform:uppercase">Total horas</div></div>
+        <div style="text-align:right"><div style="font-size:16px;font-weight:400;color:${bc(avgP)};font-family:var(--mono)">${avgP.toFixed(1)}%</div><div style="font-size:9px;opacity:.6;font-family:var(--mono);color:${light};text-transform:uppercase">% prom.</div></div>
+        <div style="text-align:right"><div style="font-size:16px;font-weight:400;color:#D94040;font-family:var(--mono)">${alertas.length}</div><div style="font-size:9px;opacity:.6;font-family:var(--mono);color:${light};text-transform:uppercase">Alertas S1</div></div>
+      </div>
+    </div>
+    <div style="font-size:9px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">Semanas — click para detalle</div>
+    <div class="sg" id="enc-sem-cards"></div>
+    <div class="enc-wrap">
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr style="border-bottom:1px solid var(--border)">
+          ${['Técnico','Cargo','Sede','Total / %','Sem 1','Sem 2','Faltantes','Estado'].map(h=>`<th style="padding:8px 12px;text-align:left;font-size:9px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em">${h}</th>`).join('')}
+        </tr></thead>
+        <tbody id="enc-tbl-body"></tbody>
+      </table>
+    </div>`;
+  document.getElementById('enc-sem-cards').innerHTML=SEMS.map(sem=>{
+    const totSH=allT.reduce((s,r)=>s+(r.s[sem.id]||0),0);
+    const cumple=allT.filter(r=>(r.s[sem.id]||0)>=MSEM).length;
+    const al=allT.filter(r=>{const h=r.s[sem.id]||0;return h>=20&&h<MSEM;}).length;
+    const crit=allT.filter(r=>(r.s[sem.id]||0)<20).length;
+    const sc=sem.id==='S1'?col:sem.id==='S2'?'var(--jamber-dim)':'var(--border)';
+    return `<div class="scard" style="border-left-color:${sc}">
+      <div class="sc-arr">↗</div>
+      <div class="sc-t">${sem.label}${sem.parcial?' <span style="font-size:9px;color:var(--jamber)">parcial</span>':''}</div>
+      <div class="sc-r">${sem.rango}</div>
+      ${sem.activa?`<div class="sc-s"><span class="sc-sl">H. equipo</span><span class="sc-sv">${totSH.toFixed(0)} h</span></div>
+        <div class="sc-s"><span class="sc-sl">Técnicos</span><span class="sc-sv">${allT.filter(r=>r.s[sem.id]>0).length}</span></div>
+        <div style="display:flex;gap:4px;margin-top:7px;flex-wrap:wrap">
+          <span class="pill p-ok" style="font-size:9px">${cumple} ≥40h</span>
+          <span class="pill p-warn" style="font-size:9px">${al} alerta</span>
+          <span class="pill p-bad" style="font-size:9px">${crit} &lt;20h</span>
+        </div>`:'<div style="font-size:11px;color:var(--text3);margin-top:8px">Próximamente</div>'}
+    </div>`;
+  }).join('');
+  document.querySelectorAll('#enc-detail .scard').forEach((card,i)=>{
+    if(SEMS[i].activa) card.onclick=()=>openSemModal(SEMS[i].id,allT);
+  });
+  const tbody=document.getElementById('enc-tbl-body');
+  tbody.innerHTML='';
+  tecs.forEach(r=>{
+    const p=pp(r.h),bcolor=bc(p),s1h=r.s.S1||0,s2h=r.s.S2||0,falt=Math.max(0,META-r.h);
+    const al=s1h<MSEM,crit=s1h<20;
+    const tr=document.createElement('tr');
+    tr.style.cssText='border-bottom:1px solid var(--border);cursor:pointer';
+    tr.innerHTML=`
+      <td style="padding:10px 12px"><div style="display:flex;align-items:center;gap:9px">
+        <div style="position:relative;flex-shrink:0">
+          <div style="width:28px;height:28px;border-radius:2px;background:${col};color:${light};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600">${ini(r.t)}</div>
+          ${al?`<div style="position:absolute;top:-2px;right:-2px;width:8px;height:8px;border-radius:50%;background:${crit?'#C8000A':'#B07A10'};border:1.5px solid var(--bg2)"></div>`:''}
+        </div>
+        <span style="font-size:13px;font-weight:500;color:var(--text)">${r.t}</span>
+      </div></td>
+      <td style="padding:10px 12px">${r.cargo==='Inhouse'?'<span class="pill p-info">Inhouse</span>':'<span class="pill p-mob">Mobile</span>'}</td>
+      <td style="padding:10px 12px;font-size:11px;color:var(--text2)">${cap(r.sede)}</td>
+      <td style="padding:10px 12px;min-width:120px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="font-size:13px;font-weight:400;color:${bcolor};font-family:var(--mono)">${r.h.toFixed(1)} h</span>
+          <span style="font-size:11px;color:${bcolor};font-family:var(--mono)">${p}%</span>
+        </div>
+        <div class="prog-track"><div class="prog-fill" style="width:${Math.min(100,p)}%;background:${bcolor}"></div></div>
+      </td>
+      <td style="padding:10px 12px">${s1h>=MSEM?`<span class="pill p-ok">${s1h.toFixed(1)}h</span>`:s1h>=20?`<span class="pill p-warn">${s1h.toFixed(1)}h</span>`:`<span class="pill p-bad">${s1h>0?s1h.toFixed(1)+'h':'0h'}</span>`}</td>
+      <td style="padding:10px 12px"><span class="pill p-part">${s2h>0?s2h.toFixed(1)+'h':'0h'}</span></td>
+      <td style="padding:10px 12px;font-family:var(--mono);font-size:12px;font-weight:500;color:${falt>0?'#D94040':'#6ABF82'}">${falt>0?'+'+falt.toFixed(1)+' h':'✓'}</td>
+      <td style="padding:10px 12px">${spill(p)}</td>`;
+    tr.onclick=()=>openTecModal({...r,enc,color:col});
+    tbody.appendChild(tr);
+  });
+}
+
+// ── PROVISIONES ──
+let pvEncF='Todos',pvSortCol2='total_lc',pvSortDir2=-1;
+function setPF(enc,btn){
+  pvEncF=enc;
+  document.querySelectorAll('[id^="pf-"]').forEach(b=>b.style.cssText='');
+  setFBtnActive(btn, enc==='Todos'?'var(--jnavy)':ecColor(enc));
+  buildPvAll();renderPvMetrics();renderPvTable();
+}
+function buildPvAll(){
+  const encs=pvEncF==='Todos'?Object.keys(PROV):[pvEncF];
+  pvAll=[];encs.forEach(enc=>{const p=PROV[enc];if(!p)return;p.accounts.forEach(a=>pvAll.push({...a,enc}));});
+  pvFiltered=applyPvQ();
+}
+function applyPvQ(){const q=pvQuery.toLowerCase();return pvAll.filter(a=>!q||a.account.toLowerCase().includes(q)||a.enc.toLowerCase().includes(q)||a.owner.toLowerCase().includes(q)||String(a.delivery).includes(q)||String(a.cotizacion).includes(q));}
+function filterProv(q){pvQuery=q;pvFiltered=applyPvQ();renderPvTable();}
+function renderPvMetrics(){
+  const totLC=pvAll.reduce((s,a)=>s+a.total_lc,0);
+  const totUSD=pvAll.reduce((s,a)=>s+a.total_usd,0);
+  const maxD=pvAll.reduce((m,a)=>Math.max(m,a.oldest),0);
+  const cuentas=new Set(pvAll.map(a=>a.account)).size;
+  document.getElementById('pv-metrics').innerHTML=[
+    {tag:'Deliveries OPEN',num:pvAll.length,sub:'documentos únicos',c:'var(--jnavy)',icon:'📋'},
+    {tag:'Total S/. LC',num:'S/.'+Math.round(totLC).toLocaleString('es-PE'),sub:'monto principal',c:'var(--jamber)',icon:'💰'},
+    {tag:'Ref. USD',num:'$'+Math.round(totUSD).toLocaleString('es-PE'),sub:'referencial',c:'var(--jnavy2)',icon:'💵'},
+    {tag:'Antigüedad máx.',num:maxD+'d',sub:'días sin facturar',c:agC(maxD),icon:'⏳'},
+    {tag:'Cuentas',num:cuentas,sub:'clientes afectados',c:'var(--jgreen)',icon:'🏢'},
+  ].map(m=>`<div class="mc" style="--c:${m.c}"><div class="mc-tag">${m.tag}</div><div class="mc-num">${m.num}</div><div class="mc-sub">${m.sub}</div><div class="mc-icon">${m.icon}</div></div>`).join('');
+}
+function sortTbl(tbl,col,th){
+  if(tbl==='pv'){
+    if(pvSortCol2===col)pvSortDir2*=-1;else{pvSortCol2=col;pvSortDir2=-1;}
+    document.querySelectorAll('#pv-tbl th').forEach(t=>t.classList.remove('sort-asc','sort-desc'));
+    th.classList.add(pvSortDir2===1?'sort-asc':'sort-desc');
+    renderPvTable();
+  } else {
+    if(ctSortCol===col)ctSortDir*=-1;else{ctSortCol=col;ctSortDir=-1;}
+    document.querySelectorAll('#ct-tbl th').forEach(t=>t.classList.remove('sort-asc','sort-desc'));
+    th.classList.add(ctSortDir===1?'sort-asc':'sort-desc');
+    renderCtTable();
+  }
+}
+function renderPvTable(){
+  const sorted=[...pvFiltered].sort((a,b)=>{const va=a[pvSortCol2],vb=b[pvSortCol2];return pvSortDir2*(typeof va==='string'?va.localeCompare(vb):va-vb);});
+  document.getElementById('pv-count').textContent=sorted.length+' deliveries';
+  const tbody=document.getElementById('pv-body');tbody.innerHTML='';
+  sorted.forEach(a=>{
+    const col=ecColor(a.enc),light=ecLight(a.enc);
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><div class="doc-tag">${a.delivery||'—'}</div></td>
+      <td><div class="doc-tag">${a.cotizacion||'—'}</div></td>
+      <td style="font-size:12px;font-weight:500;color:var(--text)">${a.account}</td>
+      <td><span class="pill" style="background:${col}40;color:${light}">${cap(a.enc)}</span></td>
+      <td style="font-size:11px;color:var(--text2)">${a.owner}</td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">${a.lineas}</td>
+      <td style="font-family:var(--mono);font-size:12px;font-weight:500;color:var(--jamber)">${fmtLC(a.total_lc)}</td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">${fmtUSD(a.total_usd)}</td>
+      <td>
+        <span style="font-family:var(--mono);font-size:12px;font-weight:500;color:${agC(a.oldest)}">${a.oldest}d</span>
+        <div class="age-bar"><div class="age-fill" style="width:${Math.min(100,Math.round(a.oldest/260*100))}%;background:${agC(a.oldest)}"></div></div>
+      </td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">${a.avg_days}d</td>
+      <td>${agPill(a.oldest)}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+function initProv(){buildPvAll();renderPvMetrics();renderPvTable();}
+
+// ── COTIZACIONES ──
+function setCF(enc,btn){
+  fCE=enc;
+  document.querySelectorAll('[id^="cf-"]').forEach(b=>b.style.cssText='');
+  setFBtnActive(btn, enc==='Todos'?'var(--jnavy)':ecColor(enc));
+  buildCtAll();renderCtMetrics();renderCtTable();renderPendingPanel();
+}
+function setCS(st,btn){
+  fCSt=st;
+  document.querySelectorAll('[id^="cs-"]').forEach(b=>b.style.cssText='');
+  const c=st==='pending'?'#8A000A':st==='sent'?'#B07A10':st==='confirmed'?'#2E6B42':'var(--jnavy)';
+  btn.style.cssText=`background:${c};color:#fff;border-color:${c}`;
+  buildCtAll();renderCtMetrics();renderCtTable();renderPendingPanel();
+}
+function buildCtAll(){
+  const encs=fCE==='Todos'?Object.keys(COT):[fCE];
+  ctAll=[];
+  encs.forEach(enc=>{const c=COT[enc];if(!c)return;c.accounts.forEach(a=>{if(fCSt==='all'||a.status===fCSt)ctAll.push({...a,enc});});});
+  ctFiltered=applyCtQ();
+}
+function applyCtQ(){const q=ctQuery.toLowerCase();return ctAll.filter(a=>!q||a.client.toLowerCase().includes(q)||String(a.doc_num).includes(q)||String(a.internal_num).includes(q)||a.enc.toLowerCase().includes(q)||a.status.toLowerCase().includes(q));}
+function filterCot(q){ctQuery=q;ctFiltered=applyCtQ();renderCtTable();}
+function renderCtMetrics(){
+  const encs=fCE==='Todos'?Object.keys(COT):[fCE];
+  let totP=0,totS=0,totC=0,totLC=0,totUSD=0;
+  encs.forEach(enc=>{const c=COT[enc];if(!c)return;totP+=c.pending;totS+=c.sent;totC+=c.confirmed;totLC+=c.total_lc;totUSD+=c.total_usd;});
+  document.getElementById('ct-metrics').innerHTML=[
+    {tag:'Pending ⚠',num:totP,sub:'sin acción — urgente',c:'#8A000A',icon:'🚨'},
+    {tag:'Sent',num:totS,sub:'enviadas',c:'var(--jamber-dim)',icon:'📤'},
+    {tag:'Confirmed',num:totC,sub:'confirmadas',c:'var(--jgreen)',icon:'✓'},
+    {tag:'Total S/. LC',num:'S/.'+Math.round(totLC).toLocaleString('es-PE'),sub:'en cotizaciones',c:'var(--jamber)',icon:'💰'},
+    {tag:'Ref. USD',num:'$'+Math.round(totUSD).toLocaleString('es-PE'),sub:'referencial',c:'var(--jnavy2)',icon:'💵'},
+  ].map(m=>`<div class="mc" style="--c:${m.c}"><div class="mc-tag">${m.tag}</div><div class="mc-num">${m.num}</div><div class="mc-sub">${m.sub}</div><div class="mc-icon">${m.icon}</div></div>`).join('');
+}
+function renderCtTable(){
+  const stO={'pending':0,'sent':1,'confirmed':2};
+  const sorted=[...ctFiltered].sort((a,b)=>{if(ctSortCol==='status')return ctSortDir*((stO[a.status]||0)-(stO[b.status]||0));const va=a[ctSortCol],vb=b[ctSortCol];return ctSortDir*(typeof va==='string'?va.localeCompare(vb):va-vb);});
+  document.getElementById('ct-count').textContent=sorted.length+' documentos';
+  const tbody=document.getElementById('ct-body');tbody.innerHTML='';
+  sorted.forEach(a=>{
+    const col=ecColor(a.enc),light=ecLight(a.enc);
+    const stP=a.status==='pending'?'<span class="pill p-pend">⚠ Pending</span>':a.status==='sent'?'<span class="pill p-sent">Sent</span>':'<span class="pill p-conf">Confirmed</span>';
+    const tr=document.createElement('tr');
+    if(a.status==='pending') tr.className='row-pend';
+    tr.style.borderBottom='1px solid var(--border)';
+    tr.innerHTML=`
+      <td><div class="doc-tag">${a.doc_num||'—'}</div>${a.internal_num?`<div style="font-size:9px;color:var(--text3);font-family:var(--mono);margin-top:2px">#${a.internal_num}</div>`:''}</td>
+      <td style="font-size:12px;font-weight:500;color:var(--text)">${a.client}</td>
+      <td><span class="pill" style="background:${col}40;color:${light}">${cap(a.enc)}</span></td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">${a.lineas}</td>
+      <td style="font-family:var(--mono);font-size:12px;font-weight:500;color:var(--jamber)">${fmtLC(a.total_lc)}</td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">${fmtUSD(a.total_usd)}</td>
+      <td>
+        <span style="font-family:var(--mono);font-size:12px;font-weight:500;color:${agC(a.oldest)}">${a.oldest}d</span>
+        <div class="age-bar"><div class="age-fill" style="width:${Math.min(100,Math.round(a.oldest/81*100))}%;background:${agC(a.oldest)}"></div></div>
+      </td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">${a.avg_days}d</td>
+      <td>${stP}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+function renderPendingPanel(){
+  const el=document.getElementById('ct-pending-panel');if(!el)return;
+  if(fCSt!=='all'&&fCSt!=='pending'){el.innerHTML='';return;}
+  const encs=fCE==='Todos'?Object.keys(COT):[fCE];
+  let rows=[];
+  encs.forEach(enc=>{
+    const c=COT[enc];if(!c)return;
+    const pend=c.accounts.filter(a=>a.status==='pending');
+    if(!pend.length)return;
+    const totalLC=pend.reduce((s,a)=>s+a.total_lc,0);
+    const maxD=Math.max(...pend.map(a=>a.oldest));
+    const clients=new Set(pend.map(a=>a.client)).size;
+    rows.push({enc,pend,totalLC,maxD,clients,n:pend.length});
+  });
+  if(!rows.length){el.innerHTML='';return;}
+  rows.sort((a,b)=>b.totalLC-a.totalLC);
+  const totalPendLC=rows.reduce((s,r)=>s+r.totalLC,0);
+  const totalPendN=rows.reduce((s,r)=>s+r.n,0);
+  let h=`<div class="pend-panel">
+    <div class="pend-panel-hdr">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:4px;height:32px;background:#8A000A;border-radius:2px;flex-shrink:0"></div>
+        <div>
+          <div style="font-size:12px;font-weight:600;color:#D94040">COTIZACIONES SIN SEGUIMIENTO (PENDING)</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:1px">${totalPendN} documentos · nadie respondió ni hizo seguimiento</div>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:17px;font-weight:400;color:var(--jamber);font-family:var(--mono)">S/.${Math.round(totalPendLC).toLocaleString('es-PE')}</div>
+        <div style="font-size:9px;color:var(--text3);font-family:var(--mono)">en riesgo de perderse</div>
+      </div>
+    </div>
+    <div class="pend-panel-grid" style="grid-template-columns:repeat(${Math.min(rows.length,4)},1fr)">
+    ${rows.map((r,i)=>{
+      const col=ecColor(r.enc),light=ecLight(r.enc);
+      const topCot=[...r.pend].sort((a,b)=>b.oldest-a.oldest).slice(0,3);
+      return `<div style="padding:13px 15px;border-right:${i<rows.length-1?'1px solid rgba(200,0,10,.12)':'none'}">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:26px;height:26px;border-radius:3px;background:${col};color:${light};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0">${r.enc.slice(0,2)}</div>
+            <span style="font-size:12px;font-weight:500;color:${light}">${cap(r.enc)}</span>
+          </div>
+          <span style="font-size:13px;font-weight:500;color:#D94040;font-family:var(--mono)">${r.n} docs</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:9px">
+          <div style="background:rgba(200,0,10,.06);border-radius:3px;padding:6px;text-align:center">
+            <div style="font-size:13px;font-weight:400;color:#D94040;font-family:var(--mono)">${fmtLCk(r.totalLC)}</div>
+            <div style="font-size:9px;color:var(--text3);font-family:var(--mono)">en riesgo</div>
+          </div>
+          <div style="background:var(--bg4);border-radius:3px;padding:6px;text-align:center">
+            <div style="font-size:13px;font-weight:400;color:${agC(r.maxD)};font-family:var(--mono)">${r.maxD}d</div>
+            <div style="font-size:9px;color:var(--text3);font-family:var(--mono)">máx. demora</div>
+          </div>
+          <div style="background:var(--bg4);border-radius:3px;padding:6px;text-align:center">
+            <div style="font-size:13px;font-weight:400;color:var(--text2);font-family:var(--mono)">${r.clients}</div>
+            <div style="font-size:9px;color:var(--text3);font-family:var(--mono)">clientes</div>
+          </div>
+        </div>
+        <div style="font-size:9px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px">Más antiguas</div>
+        ${topCot.map(a=>{
+          const sc=agC(a.oldest);
+          const shortClient=a.client.length>26?a.client.slice(0,24)+'…':a.client;
+          return `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border)">
+            <span style="font-size:10px;font-family:var(--mono);font-weight:500;color:${sc};flex-shrink:0;width:26px">${a.oldest}d</span>
+            <span style="font-size:10px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${shortClient}</span>
+            <span style="font-size:10px;font-family:var(--mono);color:var(--jamber);flex-shrink:0">${fmtLCk(a.total_lc)}</span>
+          </div>`;
+        }).join('')}
+        <button onclick="setCF('${r.enc}',document.getElementById('cf-${r.enc}'));setCS('pending',document.getElementById('cs-pending'))"
+          style="margin-top:8px;width:100%;background:rgba(200,0,10,.08);border:1px solid rgba(200,0,10,.2);color:#D94040;border-radius:3px;padding:5px 0;font-size:11px;font-family:var(--font);cursor:pointer;font-weight:500">
+          Ver todas →
+        </button>
+      </div>`;
+    }).join('')}
+    </div>
+  </div>`;
+  el.innerHTML=h;
+}
+function initCot(){buildCtAll();renderCtMetrics();renderCtTable();renderPendingPanel();}
+
+// ── INIT ──
+document.getElementById('fb-all').style.cssText='background:var(--jnavy);color:#fff;border-color:var(--jnavy)';
+document.getElementById('pf-Todos').style.cssText='background:var(--jnavy);color:#fff;border-color:var(--jnavy)';
+document.getElementById('cf-Todos').style.cssText='background:var(--jnavy);color:#fff;border-color:var(--jnavy)';
+document.getElementById('cs-all').style.cssText='background:var(--jnavy);color:#fff;border-color:var(--jnavy)';
+renderOv();
+</script>
+</body>
+</html>
